@@ -1,5 +1,9 @@
 # Parallax
 
+<p align="center">
+  <img src="media/logo.png" alt="Parallax" width="420">
+</p>
+
 > *"Depth perception for your attack surface."*
 
 Parallax is an open-source, Rust-native **typed property graph engine** built

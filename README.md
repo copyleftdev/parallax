@@ -1,6 +1,19 @@
-# Parallax
+<p align="center">
+  <img src="media/logo.png" alt="Parallax" width="480">
+</p>
 
-**Rust-native graph engine for cyber asset intelligence.**
+<p align="center">
+  <strong>Rust-native graph engine for cyber asset intelligence.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/copyleftdev/parallax/actions/workflows/ci.yml"><img src="https://github.com/copyleftdev/parallax/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://copyleftdev.github.io/parallax/"><img src="https://img.shields.io/badge/docs-pages-blue" alt="Docs"></a>
+  <a href="https://github.com/copyleftdev/parallax/blob/main/LICENSE-APACHE"><img src="https://img.shields.io/badge/license-Apache--2.0%20%2F%20MIT-blue" alt="License"></a>
+  <img src="https://img.shields.io/badge/rust-1.76%2B-orange" alt="Rust 1.76+">
+</p>
+
+---
 
 Parallax models your infrastructure as a property graph — entities as nodes,
 relationships as edges — and lets you query it with PQL, a purpose-built
