@@ -10,6 +10,9 @@ no-section-label = false
 fold.enable = true
 fold.level = 1
 additional-css = ["custom.css"]
+git-repository-url = "https://github.com/copyleftdev/parallax"
+git-repository-icon = "fa-github"
+site-url = "/parallax/"
 
 [output.html.playground]
 editable = true
