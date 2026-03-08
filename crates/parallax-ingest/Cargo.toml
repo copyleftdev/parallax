@@ -1,0 +1,19 @@
+[package]
+name = "parallax-ingest"
+description = "Sync protocol and write batch construction"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+parallax-core = { path = "../parallax-core" }
+parallax-store = { path = "../parallax-store" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+compact_str = { version = "0.8", features = ["serde"] }
+tempfile = "3"

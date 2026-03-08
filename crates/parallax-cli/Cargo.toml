@@ -1,0 +1,25 @@
+[package]
+name = "parallax-cli"
+description = "CLI binary for the Parallax graph engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "parallax"
+path = "src/main.rs"
+
+[dependencies]
+parallax-core = { path = "../parallax-core" }
+parallax-store = { path = "../parallax-store" }
+parallax-server = { path = "../parallax-server" }
+parallax-graph = { path = "../parallax-graph" }
+parallax-query = { path = "../parallax-query" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tokio = { workspace = true }

@@ -1,0 +1,30 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/parallax-core",
+    "crates/parallax-store",
+    "crates/parallax-graph",
+    "crates/parallax-query",
+    "crates/parallax-policy",
+    "crates/parallax-ingest",
+    "crates/parallax-connect",
+    "crates/parallax-server",
+    "crates/parallax-cli",
+    "crates/connector-aws-synthetic",
+    "crates/connector-gcp-synthetic",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/copyleftdev/parallax"
+rust-version = "1.76"
+
+[workspace.dependencies]
+# Shared across crates — pin versions here, reference in crate Cargo.tomls
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+thiserror = "2"
+tracing = "0.1"
+tokio = { version = "1", features = ["full"] }

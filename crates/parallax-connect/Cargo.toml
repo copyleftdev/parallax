@@ -1,0 +1,21 @@
+[package]
+name = "parallax-connect"
+description = "Integration SDK: connector trait, builders, step scheduler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+parallax-core = { path = "../parallax-core" }
+parallax-ingest = { path = "../parallax-ingest" }
+compact_str = { version = "0.8", features = ["serde"] }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+async-trait = "0.1"
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,31 @@
+[package]
+name = "parallax-store"
+description = "Storage engine for the Parallax graph engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+parallax-core = { path = "../parallax-core" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+arc-swap = "1"
+crc32c = "0.6"
+crossbeam-channel = "0.5"
+postcard = { version = "1", features = ["alloc"] }
+memmap2 = "0.9"
+
+[dev-dependencies]
+compact_str = { version = "0.8", features = ["serde"] }
+tempfile = "3"
+
+[features]
+default = ["lz4"]
+lz4 = ["dep:lz4_flex"]
+
+[dependencies.lz4_flex]
+version = "0.11"
+optional = true

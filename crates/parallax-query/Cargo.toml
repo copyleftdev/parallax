@@ -1,0 +1,20 @@
+[package]
+name = "parallax-query"
+description = "PQL parser, planner, and executor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+parallax-core = { path = "../parallax-core" }
+parallax-graph = { path = "../parallax-graph" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+parallax-store = { path = "../parallax-store" }
+compact_str = { version = "0.8", features = ["serde"] }
+tempfile = "3"

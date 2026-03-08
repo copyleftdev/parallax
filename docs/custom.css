@@ -1,0 +1,47 @@
+/* Parallax mdBook custom styles */
+
+:root {
+    --sidebar-width: 280px;
+    --content-max-width: 860px;
+}
+
+/* Slightly wider content area for code blocks */
+.content main {
+    max-width: var(--content-max-width);
+}
+
+/* Improve code block readability */
+pre {
+    border-left: 3px solid var(--sidebar-active);
+}
+
+/* Highlight invariant codes in bold */
+code {
+    font-size: 0.9em;
+}
+
+/* Table improvements */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+th {
+    background: var(--sidebar-bg);
+    padding: 8px 12px;
+    text-align: left;
+}
+
+td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--table-border-color, #ddd);
+}
+
+/* Callout blocks for invariants */
+blockquote {
+    border-left: 4px solid var(--sidebar-active);
+    background: var(--quote-bg, rgba(0,0,0,0.05));
+    padding: 0.5em 1em;
+    margin: 1em 0;
+}

@@ -1,0 +1,19 @@
+[package]
+name = "parallax-graph"
+description = "Graph engine: traversal, pattern matching, shortest path"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+parallax-core = { path = "../parallax-core" }
+parallax-store = { path = "../parallax-store" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+compact_str = { version = "0.8", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3"

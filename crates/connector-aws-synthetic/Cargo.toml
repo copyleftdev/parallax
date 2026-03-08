@@ -1,0 +1,20 @@
+[package]
+name = "connector-aws-synthetic"
+description = "Synthetic AWS telemetry emitter — realistic entity/relationship data for testing and development"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+parallax-connect = { path = "../parallax-connect" }
+async-trait = "0.1"
+
+[dev-dependencies]
+parallax-store  = { path = "../parallax-store" }
+parallax-ingest = { path = "../parallax-ingest" }
+parallax-query  = { path = "../parallax-query" }
+parallax-graph  = { path = "../parallax-graph" }
+tokio = { workspace = true }
+tempfile = "3"

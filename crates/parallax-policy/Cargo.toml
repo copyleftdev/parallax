@@ -1,0 +1,22 @@
+[package]
+name = "parallax-policy"
+description = "Policy engine for continuous compliance evaluation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+parallax-core = { path = "../parallax-core" }
+parallax-graph = { path = "../parallax-graph" }
+parallax-query = { path = "../parallax-query" }
+compact_str = { version = "0.8", features = ["serde"] }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+parallax-store = { path = "../parallax-store" }
+tempfile = "3"
