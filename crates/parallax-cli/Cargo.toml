@@ -1,11 +1,14 @@
 [package]
 name = "parallax-cli"
-description = "CLI binary for the Parallax graph engine"
+description = "CLI for the Parallax graph engine — serve, query, stats, and WAL inspection"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
+keywords = ["graph", "security", "cybersecurity", "cli", "graph-database"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "parallax"

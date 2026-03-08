@@ -1,11 +1,14 @@
 [package]
 name = "parallax-core"
-description = "Core types for the Parallax graph engine"
+description = "Core types for the Parallax graph engine — Entity, Relationship, Value, Timestamp (HLC)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
+keywords = ["graph", "security", "entity", "property-graph", "cybersecurity"]
+categories = ["data-structures", "encoding"]
 
 [dependencies]
 serde = { workspace = true }

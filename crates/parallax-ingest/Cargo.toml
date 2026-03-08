@@ -1,11 +1,14 @@
 [package]
 name = "parallax-ingest"
-description = "Sync protocol and write batch construction"
+description = "Sync protocol, source-scoped diffing, and write batch construction for Parallax"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
+keywords = ["graph", "ingest", "security", "sync", "database"]
+categories = ["database-implementations", "network-programming"]
 
 [dependencies]
 parallax-core = { path = "../parallax-core" }

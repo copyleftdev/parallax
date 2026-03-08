@@ -1,11 +1,14 @@
 [package]
 name = "parallax-server"
-description = "gRPC + REST server for the Parallax graph engine"
+description = "REST API server for the Parallax graph engine — query, ingest, policy, and metrics endpoints"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
+keywords = ["graph", "api", "security", "server", "cybersecurity"]
+categories = ["network-programming", "web-programming::http-server"]
 
 [dependencies]
 parallax-core = { path = "../parallax-core" }

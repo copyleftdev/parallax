@@ -19,7 +19,10 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/copyleftdev/parallax"
+homepage = "https://github.com/copyleftdev/parallax"
 rust-version = "1.76"
+keywords = ["graph", "security", "cybersecurity", "query", "graph-database"]
+categories = ["database", "network-programming", "command-line-utilities"]
 
 [workspace.dependencies]
 # Shared across crates — pin versions here, reference in crate Cargo.tomls
