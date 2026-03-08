@@ -13,10 +13,17 @@ pub enum ConnectorError {
     AuthFailed { reason: String },
 
     #[error("API request failed: {endpoint} returned {status}: {body}")]
-    ApiError { endpoint: String, status: u16, body: String },
+    ApiError {
+        endpoint: String,
+        status: u16,
+        body: String,
+    },
 
     #[error("Rate limited by {service}. Retry after {retry_after:?}")]
-    RateLimited { service: String, retry_after: Option<Duration> },
+    RateLimited {
+        service: String,
+        retry_after: Option<Duration>,
+    },
 
     #[error("Entity validation failed: {reason}")]
     ValidationFailed { reason: String },

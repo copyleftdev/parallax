@@ -105,7 +105,9 @@ impl<'snap> GraphReader<'snap> {
     /// Count all live entities of the given type.
     pub fn count_by_type(&self, entity_type: &str) -> usize {
         self.snapshot
-            .entities_of_type(&parallax_core::entity::EntityType::new_unchecked(entity_type))
+            .entities_of_type(&parallax_core::entity::EntityType::new_unchecked(
+                entity_type,
+            ))
             .len()
     }
 

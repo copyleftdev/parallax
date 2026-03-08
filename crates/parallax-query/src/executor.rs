@@ -91,13 +91,21 @@ struct ExecCtx {
 
 impl ExecCtx {
     fn new(limits: QueryLimits) -> Self {
-        ExecCtx { limits, start: Instant::now(), entities_scanned: 0, edges_traversed: 0 }
+        ExecCtx {
+            limits,
+            start: Instant::now(),
+            entities_scanned: 0,
+            edges_traversed: 0,
+        }
     }
 
     fn check_timeout(&self) -> Result<(), ExecError> {
         let elapsed = self.start.elapsed();
         if elapsed > self.limits.timeout {
-            Err(ExecError::Timeout { limit: self.limits.timeout, elapsed })
+            Err(ExecError::Timeout {
+                limit: self.limits.timeout,
+                elapsed,
+            })
         } else {
             Ok(())
         }
@@ -175,7 +183,10 @@ fn execute_inner<'snap>(
 
                 for neighbor in neighbors {
                     if step.target_filter.matches(neighbor.entity)
-                        && step.target_property_filters.iter().all(|f| f.matches(neighbor.entity))
+                        && step
+                            .target_property_filters
+                            .iter()
+                            .all(|f| f.matches(neighbor.entity))
                     {
                         results.push(neighbor);
                     }
@@ -196,7 +207,10 @@ fn execute_inner<'snap>(
 
                 let has_match = neighbors.iter().any(|n| {
                     step.target_filter.matches(n.entity)
-                        && step.target_property_filters.iter().all(|f| f.matches(n.entity))
+                        && step
+                            .target_property_filters
+                            .iter()
+                            .all(|f| f.matches(n.entity))
                 });
 
                 if !has_match {
@@ -225,7 +239,11 @@ fn execute_inner<'snap>(
             Ok(inner)
         }
 
-        QueryPlan::ShortestPath { from, to, max_depth } => {
+        QueryPlan::ShortestPath {
+            from,
+            to,
+            max_depth,
+        } => {
             let from_entities = execute_inner(from, graph, ctx)?.into_entities()?;
             let to_entities = execute_inner(to, graph, ctx)?.into_entities()?;
 
@@ -267,13 +285,13 @@ fn execute_inner<'snap>(
             }
 
             // Sort by the canonical key string for deterministic output.
-            let mut pairs: Vec<(String, Value, u64)> = groups
-                .into_iter()
-                .map(|(k, (v, c))| (k, v, c))
-                .collect();
+            let mut pairs: Vec<(String, Value, u64)> =
+                groups.into_iter().map(|(k, (v, c))| (k, v, c)).collect();
             pairs.sort_by(|(a, _, _), (b, _, _)| a.cmp(b));
 
-            Ok(QueryResult::Grouped(pairs.into_iter().map(|(_, v, c)| (v, c)).collect()))
+            Ok(QueryResult::Grouped(
+                pairs.into_iter().map(|(_, v, c)| (v, c)).collect(),
+            ))
         }
 
         QueryPlan::BlastRadius { origin, max_depth } => {
@@ -283,7 +301,11 @@ fn execute_inner<'snap>(
                 .ok_or(ExecError::NoMatchingEntity { side: "origin" })?
                 .id;
 
-            let result = graph.blast_radius(origin_id).default_rules().max_depth(*max_depth).analyze();
+            let result = graph
+                .blast_radius(origin_id)
+                .default_rules()
+                .max_depth(*max_depth)
+                .analyze();
             ctx.add_edges(result.total_impacted() as u64)?;
 
             // Return impacted entities as Traversals.
@@ -311,15 +333,15 @@ mod tests {
     use super::*;
     use crate::parser::parse;
     use crate::planner::{plan, IndexStats};
-    use parallax_graph::GraphReader;
-    use parallax_store::{StoreConfig, StorageEngine, WriteBatch};
+    use compact_str::CompactString;
     use parallax_core::{
         entity::{Entity, EntityClass, EntityId, EntityType},
         relationship::{Relationship, RelationshipClass, RelationshipId},
         source::SourceTag,
         timestamp::Timestamp,
     };
-    use compact_str::CompactString;
+    use parallax_graph::GraphReader;
+    use parallax_store::{StorageEngine, StoreConfig, WriteBatch};
     use std::collections::BTreeMap;
     use tempfile::TempDir;
 
@@ -345,7 +367,15 @@ mod tests {
         });
     }
 
-    fn add_rel(batch: &mut WriteBatch, account: &str, from_t: &str, from_k: &str, cls: &str, to_t: &str, to_k: &str) {
+    fn add_rel(
+        batch: &mut WriteBatch,
+        account: &str,
+        from_t: &str,
+        from_k: &str,
+        cls: &str,
+        to_t: &str,
+        to_k: &str,
+    ) {
         let from_id = EntityId::derive(account, from_t, from_k);
         let to_id = EntityId::derive(account, to_t, to_k);
         let rel_id = RelationshipId::derive(account, from_t, from_k, cls, to_t, to_k);
@@ -390,7 +420,10 @@ mod tests {
 
         let snap = engine.snapshot();
         let graph = GraphReader::new(&snap);
-        let stats = stats_for(&[("host", 2), ("service", 1)], &[("Host", 2), ("Service", 1)]);
+        let stats = stats_for(
+            &[("host", 2), ("service", 1)],
+            &[("Host", 2), ("Service", 1)],
+        );
 
         let result = run_pql("FIND host", &graph, &stats);
         assert_eq!(result.count(), 2);
@@ -438,7 +471,10 @@ mod tests {
 
         let snap = engine.snapshot();
         let graph = GraphReader::new(&snap);
-        let stats = stats_for(&[("host", 1), ("service", 1)], &[("Host", 1), ("Service", 1)]);
+        let stats = stats_for(
+            &[("host", 1), ("service", 1)],
+            &[("Host", 1), ("Service", 1)],
+        );
 
         let result = run_pql("FIND host THAT CONNECTS service", &graph, &stats);
         assert_eq!(result.count(), 1);
@@ -457,8 +493,10 @@ mod tests {
 
         let snap = engine.snapshot();
         let graph = GraphReader::new(&snap);
-        let stats =
-            stats_for(&[("host", 2), ("edr_agent", 1)], &[("Host", 2), ("SecurityTool", 1)]);
+        let stats = stats_for(
+            &[("host", 2), ("edr_agent", 1)],
+            &[("Host", 2), ("SecurityTool", 1)],
+        );
 
         let result = run_pql("FIND host THAT !PROTECTS edr_agent", &graph, &stats);
         assert_eq!(result.count(), 1);
@@ -520,8 +558,12 @@ mod tests {
             let total: u64 = groups.iter().map(|(_, c)| c).sum();
             assert_eq!(total, 3);
             // Both regions present.
-            assert!(groups.iter().any(|(v, c)| v.as_str() == Some("us-east-1") && *c == 2));
-            assert!(groups.iter().any(|(v, c)| v.as_str() == Some("eu-west-1") && *c == 1));
+            assert!(groups
+                .iter()
+                .any(|(v, c)| v.as_str() == Some("us-east-1") && *c == 2));
+            assert!(groups
+                .iter()
+                .any(|(v, c)| v.as_str() == Some("eu-west-1") && *c == 1));
         } else {
             panic!("expected Grouped result");
         }

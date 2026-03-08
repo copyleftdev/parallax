@@ -97,11 +97,12 @@ impl<'snap> BlastRadiusBuilder<'snap> {
             .map(|(cls, _)| cls.as_str())
             .collect();
 
-        let impacted: Vec<TraversalResult<'snap>> = TraversalBuilder::new(self.snapshot, self.origin)
-            .direction(Direction::Both)
-            .edge_classes(&edge_class_strings)
-            .max_depth(self.max_depth)
-            .collect();
+        let impacted: Vec<TraversalResult<'snap>> =
+            TraversalBuilder::new(self.snapshot, self.origin)
+                .direction(Direction::Both)
+                .edge_classes(&edge_class_strings)
+                .max_depth(self.max_depth)
+                .collect();
 
         // Summarize by entity class.
         let mut summary: BTreeMap<EntityClass, usize> = BTreeMap::new();
@@ -203,7 +204,10 @@ mod tests {
             .max_depth(3)
             .analyze();
         // USES is in the default attack edges, so the bucket is reachable.
-        assert!(with_rules.total_impacted() >= 1, "default_rules should traverse USES");
+        assert!(
+            with_rules.total_impacted() >= 1,
+            "default_rules should traverse USES"
+        );
     }
 
     #[test]

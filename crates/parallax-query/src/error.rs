@@ -9,13 +9,19 @@ use thiserror::Error;
 /// Errors produced by the PQL lexer and parser (INV-Q05).
 #[derive(Debug, Clone, Error)]
 pub enum ParseError {
-    #[error("Unknown verb '{verb}' at position {pos}. \
+    #[error(
+        "Unknown verb '{verb}' at position {pos}. \
              Valid verbs: HAS, IS, ASSIGNED, ALLOWS, USES, CONTAINS, \
-             MANAGES, CONNECTS, PROTECTS, EXPLOITS, TRUSTS, SCANS, RELATES TO")]
+             MANAGES, CONNECTS, PROTECTS, EXPLOITS, TRUSTS, SCANS, RELATES TO"
+    )]
     UnknownVerb { verb: String, pos: usize },
 
     #[error("Expected {expected} at position {pos}, got '{got}'")]
-    Unexpected { expected: String, got: String, pos: usize },
+    Unexpected {
+        expected: String,
+        got: String,
+        pos: usize,
+    },
 
     #[error("Unterminated string literal at position {pos}")]
     UnterminatedString { pos: usize },

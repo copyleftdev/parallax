@@ -50,14 +50,14 @@ pub enum Token {
     Scans,
     Relates,
     // ── Operators ─────────────────────────────────────────────────────────────
-    Eq,    // =
-    Ne,    // !=
-    Lt,    // <
-    Lte,   // <=
-    Gt,    // >
-    Gte,   // >=
-    Bang,  // ! (before verb for negation)
-    Star,  // * (wildcard entity filter)
+    Eq,   // =
+    Ne,   // !=
+    Lt,   // <
+    Lte,  // <=
+    Gt,   // >
+    Gte,  // >=
+    Bang, // ! (before verb for negation)
+    Star, // * (wildcard entity filter)
     LParen,
     RParen,
     Comma,
@@ -228,37 +228,62 @@ mod tests {
 
     #[test]
     fn tokenize_simple_find() {
-        let toks: Vec<Token> = tokenize("FIND host").unwrap().into_iter().map(|(t, _)| t).collect();
+        let toks: Vec<Token> = tokenize("FIND host")
+            .unwrap()
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect();
         assert_eq!(toks, vec![Token::Find, Token::Ident("host".into())]);
     }
 
     #[test]
     fn tokenize_with_string() {
-        let toks: Vec<Token> =
-            tokenize("WITH state = 'running'").unwrap().into_iter().map(|(t, _)| t).collect();
+        let toks: Vec<Token> = tokenize("WITH state = 'running'")
+            .unwrap()
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect();
         assert_eq!(
             toks,
-            vec![Token::With, Token::Ident("state".into()), Token::Eq, Token::StringLit("running".into())]
+            vec![
+                Token::With,
+                Token::Ident("state".into()),
+                Token::Eq,
+                Token::StringLit("running".into())
+            ]
         );
     }
 
     #[test]
     fn tokenize_ne_operator() {
-        let toks: Vec<Token> =
-            tokenize("port != 443").unwrap().into_iter().map(|(t, _)| t).collect();
-        assert_eq!(toks, vec![Token::Ident("port".into()), Token::Ne, Token::Integer(443)]);
+        let toks: Vec<Token> = tokenize("port != 443")
+            .unwrap()
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect();
+        assert_eq!(
+            toks,
+            vec![Token::Ident("port".into()), Token::Ne, Token::Integer(443)]
+        );
     }
 
     #[test]
     fn tokenize_negated_traversal() {
-        let toks: Vec<Token> =
-            tokenize("THAT !PROTECTS").unwrap().into_iter().map(|(t, _)| t).collect();
+        let toks: Vec<Token> = tokenize("THAT !PROTECTS")
+            .unwrap()
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect();
         assert_eq!(toks, vec![Token::That, Token::Bang, Token::Protects]);
     }
 
     #[test]
     fn tokenize_wildcard() {
-        let toks: Vec<Token> = tokenize("FIND *").unwrap().into_iter().map(|(t, _)| t).collect();
+        let toks: Vec<Token> = tokenize("FIND *")
+            .unwrap()
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect();
         assert_eq!(toks, vec![Token::Find, Token::Star]);
     }
 

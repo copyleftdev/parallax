@@ -206,7 +206,9 @@ mod tests {
 
     #[test]
     fn entity_builder_derives_id() {
-        let e = entity("host", "h1").class("Host").build("acme", test_source());
+        let e = entity("host", "h1")
+            .class("Host")
+            .build("acme", test_source());
         assert_eq!(e.id, EntityId::derive("acme", "host", "h1"));
         assert_eq!(e._type.as_str(), "host");
         assert_eq!(e._class.as_str(), "Host");

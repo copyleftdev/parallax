@@ -170,7 +170,10 @@ impl CompactionWorker {
 fn compact(req: CompactionRequest) -> Result<CompactionResult, StoreError> {
     let merged_count = req.segments.len();
     if merged_count == 0 {
-        return Ok(CompactionResult { new_segments: vec![], merged_count: 0 });
+        return Ok(CompactionResult {
+            new_segments: vec![],
+            merged_count: 0,
+        });
     }
 
     // Merge entities newest-first. `or_insert_with` keeps the first (newest) version.
@@ -182,7 +185,9 @@ fn compact(req: CompactionRequest) -> Result<CompactionResult, StoreError> {
     // Segments are oldest-first in the engine list → rev() = newest first.
     for seg in req.segments.iter().rev() {
         for entity in seg.all_entities() {
-            entity_map.entry(entity.id).or_insert_with(|| entity.clone());
+            entity_map
+                .entry(entity.id)
+                .or_insert_with(|| entity.clone());
         }
         for rel in seg.all_relationships() {
             rel_map.entry(rel.id).or_insert_with(|| rel.clone());
@@ -193,8 +198,14 @@ fn compact(req: CompactionRequest) -> Result<CompactionResult, StoreError> {
     let relationships: Vec<_> = rel_map.into_values().collect();
 
     if entities.is_empty() && relationships.is_empty() {
-        info!(merged_count, "compaction produced empty segment (all tombstoned)");
-        return Ok(CompactionResult { new_segments: vec![], merged_count });
+        info!(
+            merged_count,
+            "compaction produced empty segment (all tombstoned)"
+        );
+        return Ok(CompactionResult {
+            new_segments: vec![],
+            merged_count,
+        });
     }
 
     // Write merged output as a level-1 segment.
@@ -311,13 +322,8 @@ mod tests {
         let worker = CompactionWorker::spawn();
 
         let id = EntityId::derive("acc", "host", "h1");
-        let seg = SegmentRef::write(
-            &dir.path().join("s0.pxs"),
-            0,
-            vec![make_entity(id)],
-            vec![],
-        )
-        .unwrap();
+        let seg = SegmentRef::write(&dir.path().join("s0.pxs"), 0, vec![make_entity(id)], vec![])
+            .unwrap();
 
         let submitted = worker.try_compact(vec![seg], dir.path().to_path_buf(), 1);
         assert!(submitted, "request should be accepted");

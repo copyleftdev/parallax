@@ -80,12 +80,15 @@ impl WriteBatch {
 
     /// Approximate serialized size in bytes (for WAL segment rotation heuristics).
     pub fn approx_size(&self) -> usize {
-        self.operations.iter().map(|op| match op {
-            WriteOp::UpsertEntity(e) => e.approx_size() + 8,
-            WriteOp::DeleteEntity(_) => 24,
-            WriteOp::UpsertRelationship(r) => r.approx_size() + 8,
-            WriteOp::DeleteRelationship(_) => 24,
-        }).sum()
+        self.operations
+            .iter()
+            .map(|op| match op {
+                WriteOp::UpsertEntity(e) => e.approx_size() + 8,
+                WriteOp::DeleteEntity(_) => 24,
+                WriteOp::UpsertRelationship(r) => r.approx_size() + 8,
+                WriteOp::DeleteRelationship(_) => 24,
+            })
+            .sum()
     }
 }
 

@@ -12,8 +12,8 @@
 //! INV-S07: Only `write()` mutates the MemTable.
 
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::time::Duration;
 
 use tracing::debug;
@@ -71,9 +71,9 @@ impl Default for StoreConfig {
     fn default() -> Self {
         StoreConfig {
             data_dir: PathBuf::from("parallax-data"),
-            wal_segment_size: 64 * 1024 * 1024,       // 64 MB
+            wal_segment_size: 64 * 1024 * 1024, // 64 MB
             group_commit: GroupCommitConfig::default(),
-            memtable_flush_size: 64 * 1024 * 1024,    // 64 MB
+            memtable_flush_size: 64 * 1024 * 1024, // 64 MB
             compaction: CompactionConfig::default(),
         }
     }
@@ -133,7 +133,8 @@ impl StorageEngine {
         let metrics = Arc::new(StoreMetrics::new());
 
         // Publish initial snapshot.
-        let initial_snapshot = Snapshot::new(version, memtable.as_arc_snapshot(), Arc::clone(&segments));
+        let initial_snapshot =
+            Snapshot::new(version, memtable.as_arc_snapshot(), Arc::clone(&segments));
         let snapshot_mgr = Arc::new(SnapshotManager::new(initial_snapshot));
 
         Ok(StorageEngine {
@@ -363,8 +364,12 @@ impl StorageEngine {
         if l0_trigger > 0 && !self.pending_compaction {
             let l0_count = self.segments.iter().filter(|s| s.level == 0).count();
             if l0_count >= l0_trigger {
-                let segments_to_compact: Vec<_> =
-                    self.segments.iter().filter(|s| s.level == 0).cloned().collect();
+                let segments_to_compact: Vec<_> = self
+                    .segments
+                    .iter()
+                    .filter(|s| s.level == 0)
+                    .cloned()
+                    .collect();
                 let submitted = self.compaction_worker.try_compact(
                     segments_to_compact,
                     segment_dir,
@@ -411,13 +416,13 @@ impl StorageEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use compact_str::CompactString;
     use parallax_core::{
         entity::{Entity, EntityClass, EntityId, EntityType},
         relationship::{Relationship, RelationshipClass, RelationshipId},
         source::SourceTag,
         timestamp::Timestamp,
     };
-    use compact_str::CompactString;
     use std::collections::BTreeMap;
     use tempfile::TempDir;
 
@@ -579,7 +584,11 @@ mod tests {
         let snap = engine.snapshot();
         assert!(snap.get_entity(id).is_some(), "entity readable after flush");
         // MemTable entity payload should be empty (flushed to segment).
-        assert_eq!(engine.memtable.entity_count(), 0, "memtable cleared after flush");
+        assert_eq!(
+            engine.memtable.entity_count(),
+            0,
+            "memtable cleared after flush"
+        );
     }
 
     /// Regression: after flush + re-upsert, entity_count() and entities_of_type()
@@ -609,8 +618,12 @@ mod tests {
         let snap = engine.snapshot();
         // Must be 1 unique entity, not 2.
         assert_eq!(snap.entity_count(), 1, "double-count after flush+upsert");
-        assert_eq!(snap.entities_of_type(&parallax_core::entity::EntityType::new_unchecked("host")).len(), 1,
-            "entities_of_type double-count after flush+upsert");
+        assert_eq!(
+            snap.entities_of_type(&parallax_core::entity::EntityType::new_unchecked("host"))
+                .len(),
+            1,
+            "entities_of_type double-count after flush+upsert"
+        );
     }
 
     #[test]
@@ -673,7 +686,10 @@ mod tests {
         let snap = engine2.snapshot();
         assert_eq!(snap.entity_count(), 3);
         for id in &ids {
-            assert!(snap.get_entity(*id).is_some(), "entity {id:?} missing after recovery");
+            assert!(
+                snap.get_entity(*id).is_some(),
+                "entity {id:?} missing after recovery"
+            );
         }
     }
 

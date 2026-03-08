@@ -6,7 +6,7 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use parallax_server::{router, AppState};
-use parallax_store::{StoreConfig, StorageEngine};
+use parallax_store::{StorageEngine, StoreConfig};
 use tempfile::TempDir;
 use tower::ServiceExt as _; // for `oneshot`
 
@@ -20,9 +20,7 @@ fn open_app(api_key: &str) -> (axum::Router, TempDir) {
 }
 
 async fn get(app: axum::Router, path: &str, token: Option<&str>) -> axum::response::Response {
-    let mut builder = Request::builder()
-        .method("GET")
-        .uri(path);
+    let mut builder = Request::builder().method("GET").uri(path);
     if let Some(t) = token {
         builder = builder.header("Authorization", format!("Bearer {t}"));
     }
@@ -30,7 +28,12 @@ async fn get(app: axum::Router, path: &str, token: Option<&str>) -> axum::respon
     app.oneshot(req).await.unwrap()
 }
 
-async fn post_json(app: axum::Router, path: &str, token: Option<&str>, body: &str) -> axum::response::Response {
+async fn post_json(
+    app: axum::Router,
+    path: &str,
+    token: Option<&str>,
+    body: &str,
+) -> axum::response::Response {
     let mut builder = Request::builder()
         .method("POST")
         .uri(path)
@@ -58,7 +61,9 @@ async fn health_response_fields() {
     let (app, _dir) = open_app("");
     let resp = get(app, "/v1/health", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let body = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["status"], "healthy");
     assert!(json["version"].is_string());
@@ -106,7 +111,10 @@ async fn open_mode_allows_all() {
 async fn response_has_request_id() {
     let (app, _dir) = open_app("");
     let resp = get(app, "/v1/health", None).await;
-    assert!(resp.headers().contains_key("x-request-id"), "X-Request-Id must be present");
+    assert!(
+        resp.headers().contains_key("x-request-id"),
+        "X-Request-Id must be present"
+    );
 }
 
 /// Caller-supplied X-Request-Id is propagated back.
@@ -120,7 +128,12 @@ async fn caller_request_id_propagated() {
         .body(Body::empty())
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
-    let id = resp.headers().get("x-request-id").unwrap().to_str().unwrap();
+    let id = resp
+        .headers()
+        .get("x-request-id")
+        .unwrap()
+        .to_str()
+        .unwrap();
     assert_eq!(id, "my-trace-id-42");
 }
 
@@ -131,7 +144,9 @@ async fn stats_returns_counts() {
     let (app, _dir) = open_app("");
     let resp = get(app, "/v1/stats", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let body = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert!(json["total_entities"].is_number());
     assert!(json["total_relationships"].is_number());
@@ -153,7 +168,9 @@ async fn ingest_sync_creates_entities() {
     }"#;
     let resp = post_json(app, "/v1/ingest/sync", None, body).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["entities_created"], 2);
 }
@@ -170,7 +187,9 @@ async fn ingest_write_accepts_raw_batch() {
     }"#;
     let resp = post_json(app, "/v1/ingest/write", None, body).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["write_id"], "w1");
     assert!(json["ops_written"].as_u64().unwrap() >= 1);
@@ -183,9 +202,16 @@ async fn metrics_returns_prometheus_format() {
     let (app, _dir) = open_app("");
     let resp = get(app, "/metrics", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+    let ct = resp
+        .headers()
+        .get("content-type")
+        .unwrap()
+        .to_str()
+        .unwrap();
     assert!(ct.contains("text/plain"));
-    let body = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let body = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let text = std::str::from_utf8(&body).unwrap();
     assert!(text.contains("parallax_wal_appends_total"));
     assert!(text.contains("parallax_entities_total"));
@@ -198,7 +224,9 @@ async fn list_connectors_returns_array() {
     let (app, _dir) = open_app("");
     let resp = get(app, "/v1/connectors", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert!(json["connectors"].is_array());
 }
@@ -211,7 +239,9 @@ async fn pql_query_returns_result() {
     let body = r#"{"pql": "FIND *"}"#;
     let resp = post_json(app, "/v1/query", None, body).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert!(json["count"].is_number());
 }
@@ -222,7 +252,9 @@ async fn pql_bad_query_returns_400() {
     let body = r#"{"pql": "NOT VALID PQL!!!"}"#;
     let resp = post_json(app, "/v1/query", None, body).await;
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert!(json["error"].is_string());
 }
@@ -235,7 +267,9 @@ async fn v02_policy_list_initially_empty() {
     let (app, _dir) = open_app("");
     let resp = get(app, "/v1/policies", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["count"], 0);
     assert!(json["rules"].as_array().unwrap().is_empty());
@@ -263,14 +297,18 @@ async fn v02_policy_set_and_list() {
     // Set the rules.
     let resp = post_json(app.clone(), "/v1/policies", None, body).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["loaded"], 1);
 
     // List them back.
     let resp = get(app, "/v1/policies", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["count"], 1);
     assert_eq!(json["rules"][0]["id"], "test-001");
@@ -298,7 +336,9 @@ async fn v02_policy_set_invalid_pql_rejected() {
     }"#;
     let resp = post_json(app, "/v1/policies", None, body).await;
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert!(json["error"].is_string(), "must return error message");
 }
@@ -318,7 +358,9 @@ async fn v02_policy_evaluate_no_rules_returns_empty() {
     let (app, _dir) = open_app("");
     let resp = post_json(app, "/v1/policies/evaluate", None, "{}").await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["total"], 0);
     assert_eq!(json["pass"], 0);
@@ -366,7 +408,9 @@ async fn v02_policy_evaluate_with_data() {
     // Evaluate.
     let resp = post_json(app, "/v1/policies/evaluate", None, "{}").await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["total"], 1, "one rule evaluated");
     // FIND host finds 2 hosts → violations → Fail
@@ -380,7 +424,9 @@ async fn v02_policy_posture_no_policies() {
     let (app, _dir) = open_app("");
     let resp = get(app, "/v1/policies/posture", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     // No policies → score defaults to 1.0 with a note.
     assert!(json["overall_score"].is_number());
@@ -414,7 +460,9 @@ async fn v02_policy_posture_with_framework_param() {
     // Request posture for a different framework.
     let resp = get(app, "/v1/policies/posture?framework=NIST-CSF", None).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["framework"], "NIST-CSF");
     // No rules mapped to NIST-CSF → controls array is empty.
@@ -453,14 +501,18 @@ async fn v02_policy_set_disabled_rule_not_evaluated() {
     }"#;
     let resp = post_json(app.clone(), "/v1/policies", None, set_body).await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["loaded"], 2, "both rules loaded");
 
     // Evaluate — only enabled rule runs.
     let resp = post_json(app, "/v1/policies/evaluate", None, "{}").await;
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     // Enabled rule: finds nothing in empty graph → Pass.
     // Disabled rule: not included in evaluate payload → total = 1.

@@ -93,7 +93,7 @@ mod tests {
         source::SourceTag,
         timestamp::Timestamp,
     };
-    use parallax_store::{StoreConfig, StorageEngine};
+    use parallax_store::{StorageEngine, StoreConfig};
     use std::collections::BTreeMap;
     use tempfile::TempDir;
 
@@ -149,7 +149,10 @@ mod tests {
         let r = make_rel("h-ghost", "CONNECTS", "h1");
         let result = validate_sync_batch(&[e], &[r], &snap);
         assert!(result.is_err());
-        assert!(matches!(result, Err(SyncError::DanglingRelationship { .. })));
+        assert!(matches!(
+            result,
+            Err(SyncError::DanglingRelationship { .. })
+        ));
     }
 
     #[test]

@@ -73,7 +73,9 @@ fn build_stats(engine: &StorageEngine) -> IndexStats {
 
     for e in &all {
         *type_counts.entry(e._type.as_str().to_owned()).or_insert(0) += 1;
-        *class_counts.entry(e._class.as_str().to_owned()).or_insert(0) += 1;
+        *class_counts
+            .entry(e._class.as_str().to_owned())
+            .or_insert(0) += 1;
     }
 
     IndexStats::new(

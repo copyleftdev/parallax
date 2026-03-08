@@ -134,7 +134,8 @@ impl Snapshot {
     /// MemTable is authoritative (newest version). An entity present in both a
     /// segment and the MemTable — or in multiple segments — is counted once.
     pub fn entity_count(&self) -> usize {
-        let mut seen: HashSet<EntityId> = self.memtable.all_entities().iter().map(|e| e.id).collect();
+        let mut seen: HashSet<EntityId> =
+            self.memtable.all_entities().iter().map(|e| e.id).collect();
         for seg in self.segments.iter().rev() {
             for e in seg.all_entities() {
                 seen.insert(e.id);
@@ -145,8 +146,12 @@ impl Snapshot {
 
     /// Number of live relationships visible in this snapshot (unique across MemTable + all segments).
     pub fn relationship_count(&self) -> usize {
-        let mut seen: HashSet<RelationshipId> =
-            self.memtable.all_relationships().iter().map(|r| r.id).collect();
+        let mut seen: HashSet<RelationshipId> = self
+            .memtable
+            .all_relationships()
+            .iter()
+            .map(|r| r.id)
+            .collect();
         for seg in self.segments.iter().rev() {
             for r in seg.all_relationships() {
                 seen.insert(r.id);
@@ -264,11 +269,7 @@ mod tests {
     use super::*;
 
     fn empty_snapshot(version: u64) -> Snapshot {
-        Snapshot::new(
-            version,
-            Arc::new(MemTable::new()),
-            Arc::new(Vec::new()),
-        )
+        Snapshot::new(version, Arc::new(MemTable::new()), Arc::new(Vec::new()))
     }
 
     #[test]

@@ -69,7 +69,11 @@ impl PolicyEvaluator {
     ///
     /// INV-P01: All threads read the same snapshot — evaluation is atomic.
     /// INV-P03: Each thread captures errors independently.
-    pub fn par_evaluate_all<'snap>(&self, graph: &GraphReader<'snap>, limits: QueryLimits) -> Vec<RuleResult>
+    pub fn par_evaluate_all<'snap>(
+        &self,
+        graph: &GraphReader<'snap>,
+        limits: QueryLimits,
+    ) -> Vec<RuleResult>
     where
         GraphReader<'snap>: Sync,
     {
@@ -88,7 +92,12 @@ impl PolicyEvaluator {
             }
         });
 
-        slots.into_inner().expect("slots lock").into_iter().flatten().collect()
+        slots
+            .into_inner()
+            .expect("slots lock")
+            .into_iter()
+            .flatten()
+            .collect()
     }
 }
 
@@ -121,7 +130,11 @@ fn evaluate_one<'snap>(
 
     match exec_result {
         Ok(violations) => {
-            let status = if violations.is_empty() { RuleStatus::Pass } else { RuleStatus::Fail };
+            let status = if violations.is_empty() {
+                RuleStatus::Pass
+            } else {
+                RuleStatus::Fail
+            };
             RuleResult {
                 rule_id: rule.id.clone(),
                 status,
@@ -210,6 +223,7 @@ pub struct Violation {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use compact_str::CompactString;
     use parallax_core::{
         entity::{Entity, EntityClass, EntityId, EntityType},
         property::Value,
@@ -217,8 +231,7 @@ mod tests {
         timestamp::Timestamp as Ts,
     };
     use parallax_query::IndexStats;
-    use parallax_store::{StoreConfig, StorageEngine, WriteBatch};
-    use compact_str::CompactString;
+    use parallax_store::{StorageEngine, StoreConfig, WriteBatch};
     use std::collections::BTreeMap;
     use tempfile::TempDir;
 
@@ -261,7 +274,10 @@ mod tests {
         let rule = PolicyRule::new("r1", "Bad Rule", "INVALID SYNTAX HERE");
         let result = PolicyEvaluator::load(vec![rule], &stats());
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), PolicyError::InvalidQuery { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            PolicyError::InvalidQuery { .. }
+        ));
     }
 
     #[test]

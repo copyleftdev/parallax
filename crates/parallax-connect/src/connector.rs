@@ -49,7 +49,11 @@ impl StepDefinitionBuilder {
     }
 
     pub fn build(self) -> StepDefinition {
-        StepDefinition { id: self.id, description: self.description, depends_on: self.depends_on }
+        StepDefinition {
+            id: self.id,
+            description: self.description,
+            depends_on: self.depends_on,
+        }
     }
 }
 
@@ -70,11 +74,13 @@ pub struct PriorStepData {
 
 impl PriorStepData {
     pub fn get(&self, entity_type: &str, entity_key: &str) -> Option<&EntityBuilder> {
-        self.entities.get(&(entity_type.to_owned(), entity_key.to_owned()))
+        self.entities
+            .get(&(entity_type.to_owned(), entity_key.to_owned()))
     }
 
     pub(crate) fn insert(&mut self, b: &EntityBuilder) {
-        self.entities.insert((b.entity_type.clone(), b.entity_key.clone()), b.clone());
+        self.entities
+            .insert((b.entity_type.clone(), b.entity_key.clone()), b.clone());
     }
 }
 
@@ -156,11 +162,7 @@ impl StepContext {
     }
 
     /// Look up an entity emitted by a prior step.
-    pub fn get_prior_entity(
-        &self,
-        entity_type: &str,
-        entity_key: &str,
-    ) -> Option<&EntityBuilder> {
+    pub fn get_prior_entity(&self, entity_type: &str, entity_key: &str) -> Option<&EntityBuilder> {
         self.prior_entities.get(entity_type, entity_key)
     }
 
@@ -198,8 +200,7 @@ pub trait Connector: Send + Sync {
 
 /// Validate that step dependencies are acyclic (INV-C05).
 pub fn validate_steps(steps: &[StepDefinition]) -> Result<(), ConnectorError> {
-    let step_ids: std::collections::HashSet<&str> =
-        steps.iter().map(|s| s.id.as_str()).collect();
+    let step_ids: std::collections::HashSet<&str> = steps.iter().map(|s| s.id.as_str()).collect();
 
     // Check all declared dependencies exist.
     for step in steps {
@@ -311,7 +312,8 @@ pub fn topological_order(steps: &[StepDefinition]) -> Vec<&StepDefinition> {
         .map(|(&id, _)| id)
         .collect();
 
-    let step_map: HashMap<&str, &StepDefinition> = steps.iter().map(|s| (s.id.as_str(), s)).collect();
+    let step_map: HashMap<&str, &StepDefinition> =
+        steps.iter().map(|s| (s.id.as_str(), s)).collect();
     let mut result = Vec::new();
 
     while let Some(id) = queue.pop_front() {
@@ -355,13 +357,19 @@ mod tests {
     #[test]
     fn validate_cyclic_steps_error() {
         let steps = make_steps(&[("a", &["b"]), ("b", &["a"])]);
-        assert!(matches!(validate_steps(&steps), Err(ConnectorError::DependencyCycle { .. })));
+        assert!(matches!(
+            validate_steps(&steps),
+            Err(ConnectorError::DependencyCycle { .. })
+        ));
     }
 
     #[test]
     fn topological_order_respects_dependencies() {
         let steps = make_steps(&[("a", &[]), ("b", &["a"]), ("c", &["b"])]);
-        let order: Vec<&str> = topological_order(&steps).iter().map(|s| s.id.as_str()).collect();
+        let order: Vec<&str> = topological_order(&steps)
+            .iter()
+            .map(|s| s.id.as_str())
+            .collect();
         let a = order.iter().position(|&s| s == "a").unwrap();
         let b = order.iter().position(|&s| s == "b").unwrap();
         let c = order.iter().position(|&s| s == "c").unwrap();

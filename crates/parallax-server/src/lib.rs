@@ -11,9 +11,9 @@ pub mod state;
 pub use state::AppState;
 
 use anyhow::Result;
-use axum::{middleware as axum_middleware, Router};
 use axum::routing::{get, post};
-use parallax_store::{StoreConfig, StorageEngine};
+use axum::{middleware as axum_middleware, Router};
+use parallax_store::{StorageEngine, StoreConfig};
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 
@@ -35,8 +35,14 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/ingest/sync", post(routes::ingest_sync))
         .route("/v1/ingest/write", post(routes::ingest_write))
         .route("/v1/connectors", get(routes::list_connectors))
-        .route("/v1/connectors/:id/sync", post(routes::trigger_connector_sync))
-        .route("/v1/policies", get(routes::list_policies).post(routes::set_policies))
+        .route(
+            "/v1/connectors/:id/sync",
+            post(routes::trigger_connector_sync),
+        )
+        .route(
+            "/v1/policies",
+            get(routes::list_policies).post(routes::set_policies),
+        )
         .route("/v1/policies/evaluate", post(routes::evaluate_policies))
         .route("/v1/policies/posture", get(routes::policy_posture))
         .route("/metrics", get(routes::prometheus_metrics))
@@ -57,7 +63,9 @@ pub fn router(state: AppState) -> Router {
 pub async fn serve(host: &str, port: u16, data_dir: &str) -> Result<()> {
     let api_key = std::env::var("PARALLAX_API_KEY").unwrap_or_default();
     if api_key.is_empty() {
-        tracing::warn!("PARALLAX_API_KEY is not set — server running in open/dev mode (INV-A01 not enforced)");
+        tracing::warn!(
+            "PARALLAX_API_KEY is not set — server running in open/dev mode (INV-A01 not enforced)"
+        );
     }
 
     let config = StoreConfig::new(data_dir);

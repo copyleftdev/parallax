@@ -15,7 +15,9 @@ use crate::timestamp::Timestamp;
 /// `(account_id, entity_type, entity_key)` via blake3.
 ///
 /// INV-01: EntityId is deterministic — same inputs always produce the same ID.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 pub struct EntityId(pub [u8; 16]);
 
 impl EntityId {
@@ -47,7 +49,6 @@ impl fmt::Display for EntityId {
     }
 }
 
-
 /// Entity type — the specific asset kind (e.g., `aws_ec2_instance`).
 /// Always lowercase, underscore-separated.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -75,13 +76,47 @@ impl fmt::Display for EntityType {
 /// New classes require a spec change. Connectors must map their assets
 /// to one of these classes at ingest time.
 pub const KNOWN_CLASSES: &[&str] = &[
-    "Host", "User", "DataStore", "CodeRepo", "Firewall", "AccessPolicy",
-    "NetworkSegment", "Service", "Certificate", "Secret", "Credential", "Key",
-    "Container", "Pod", "Cluster", "Namespace", "Function", "Queue", "Topic",
-    "Database", "Application", "Package", "Vulnerability", "Identity", "Process",
-    "File", "Registry", "Policy", "Account", "Organization", "Team", "Role",
-    "Group", "Device", "Endpoint", "Scanner", "Agent", "Sensor", "Ticket",
-    "Event", "Generic",
+    "Host",
+    "User",
+    "DataStore",
+    "CodeRepo",
+    "Firewall",
+    "AccessPolicy",
+    "NetworkSegment",
+    "Service",
+    "Certificate",
+    "Secret",
+    "Credential",
+    "Key",
+    "Container",
+    "Pod",
+    "Cluster",
+    "Namespace",
+    "Function",
+    "Queue",
+    "Topic",
+    "Database",
+    "Application",
+    "Package",
+    "Vulnerability",
+    "Identity",
+    "Process",
+    "File",
+    "Registry",
+    "Policy",
+    "Account",
+    "Organization",
+    "Team",
+    "Role",
+    "Group",
+    "Device",
+    "Endpoint",
+    "Scanner",
+    "Agent",
+    "Sensor",
+    "Ticket",
+    "Event",
+    "Generic",
 ];
 
 /// Entity class — the broad category (e.g., `Host`, `DataStore`, `User`).

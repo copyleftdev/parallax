@@ -14,7 +14,9 @@ use crate::timestamp::Timestamp;
 
 /// 16-byte relationship identity, derived from
 /// `(account_id, from_type, from_key, verb, to_type, to_key)` via blake3.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 pub struct RelationshipId(pub [u8; 16]);
 
 impl RelationshipId {
@@ -54,14 +56,13 @@ impl fmt::Display for RelationshipId {
     }
 }
 
-
 /// The curated, closed set of relationship verbs (spec §1.4).
 ///
 /// New verbs require a spec change to ensure query semantics remain
 /// consistent across all connectors and entity types.
 pub const KNOWN_VERBS: &[&str] = &[
-    "HAS", "IS", "ASSIGNED", "ALLOWS", "USES", "CONTAINS",
-    "MANAGES", "CONNECTS", "PROTECTS", "EXPLOITS", "TRUSTS", "SCANS",
+    "HAS", "IS", "ASSIGNED", "ALLOWS", "USES", "CONTAINS", "MANAGES", "CONNECTS", "PROTECTS",
+    "EXPLOITS", "TRUSTS", "SCANS",
     // Extended set — approved for v0.1 use by connectors:
     "RUNS", "READS", "WRITES",
 ];
@@ -172,15 +173,43 @@ mod tests {
 
     #[test]
     fn relationship_id_is_deterministic() {
-        let id1 = RelationshipId::derive("acct-1", "aws_vpc", "vpc-1", "HAS", "aws_ec2_instance", "i-1");
-        let id2 = RelationshipId::derive("acct-1", "aws_vpc", "vpc-1", "HAS", "aws_ec2_instance", "i-1");
+        let id1 = RelationshipId::derive(
+            "acct-1",
+            "aws_vpc",
+            "vpc-1",
+            "HAS",
+            "aws_ec2_instance",
+            "i-1",
+        );
+        let id2 = RelationshipId::derive(
+            "acct-1",
+            "aws_vpc",
+            "vpc-1",
+            "HAS",
+            "aws_ec2_instance",
+            "i-1",
+        );
         assert_eq!(id1, id2);
     }
 
     #[test]
     fn relationship_id_differs_for_different_verb() {
-        let id1 = RelationshipId::derive("acct-1", "aws_vpc", "vpc-1", "HAS", "aws_ec2_instance", "i-1");
-        let id2 = RelationshipId::derive("acct-1", "aws_vpc", "vpc-1", "CONTAINS", "aws_ec2_instance", "i-1");
+        let id1 = RelationshipId::derive(
+            "acct-1",
+            "aws_vpc",
+            "vpc-1",
+            "HAS",
+            "aws_ec2_instance",
+            "i-1",
+        );
+        let id2 = RelationshipId::derive(
+            "acct-1",
+            "aws_vpc",
+            "vpc-1",
+            "CONTAINS",
+            "aws_ec2_instance",
+            "i-1",
+        );
         assert_ne!(id1, id2);
     }
 

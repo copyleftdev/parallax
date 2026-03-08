@@ -41,6 +41,8 @@
 //! };
 //! ```
 
+#![allow(clippy::explicit_auto_deref)]
+
 use async_trait::async_trait;
 use parallax_connect::{
     builder::{entity, relationship},
@@ -51,16 +53,30 @@ use parallax_connect::{
 // ─── Static lookup tables ─────────────────────────────────────────────────────
 
 const INSTANCE_TYPES: &[&str] = &[
-    "t3.micro", "t3.small", "t3.medium", "t3.large", "t3.xlarge",
-    "m5.large", "m5.xlarge", "m5.2xlarge", "m5.4xlarge",
-    "c5.large", "c5.xlarge", "c5.2xlarge",
-    "r5.large", "r5.xlarge",
-    "m6i.large", "m6i.xlarge",
+    "t3.micro",
+    "t3.small",
+    "t3.medium",
+    "t3.large",
+    "t3.xlarge",
+    "m5.large",
+    "m5.xlarge",
+    "m5.2xlarge",
+    "m5.4xlarge",
+    "c5.large",
+    "c5.xlarge",
+    "c5.2xlarge",
+    "r5.large",
+    "r5.xlarge",
+    "m6i.large",
+    "m6i.xlarge",
 ];
 
 const REGIONS: &[&str] = &[
-    "us-east-1", "us-east-2", "us-west-2",
-    "eu-west-1", "eu-central-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2",
+    "eu-west-1",
+    "eu-central-1",
     "ap-southeast-1",
 ];
 
@@ -75,16 +91,13 @@ const AZS: &[&[&str]] = &[
 ];
 
 const EC2_STATES: &[(&str, u8)] = &[
-    ("running", 75),   // weighted: 75% running
+    ("running", 75), // weighted: 75% running
     ("stopped", 15),
-    ("pending",  5),
+    ("pending", 5),
     ("terminated", 5),
 ];
 
-const PLATFORMS: &[(&str, u8)] = &[
-    ("linux",   80),
-    ("windows", 20),
-];
+const PLATFORMS: &[(&str, u8)] = &[("linux", 80), ("windows", 20)];
 
 const EDR_VENDORS: &[&str] = &[
     "CrowdStrike Falcon",
@@ -94,9 +107,14 @@ const EDR_VENDORS: &[&str] = &[
 ];
 
 const SG_DESCRIPTIONS: &[&str] = &[
-    "Web tier inbound", "App tier inbound", "DB tier inbound",
-    "Management access", "Default VPC SG", "Bastion host SG",
-    "Load balancer SG", "Internal microservices",
+    "Web tier inbound",
+    "App tier inbound",
+    "DB tier inbound",
+    "Management access",
+    "Default VPC SG",
+    "Bastion host SG",
+    "Load balancer SG",
+    "Internal microservices",
 ];
 
 const AWS_MANAGED_POLICIES: &[&str] = &[
@@ -117,30 +135,39 @@ const AWS_MANAGED_POLICIES: &[&str] = &[
 ];
 
 const BUCKET_ADJECTIVES: &[&str] = &[
-    "prod", "staging", "dev", "archive", "backup",
-    "logs", "assets", "data", "shared", "infra",
+    "prod", "staging", "dev", "archive", "backup", "logs", "assets", "data", "shared", "infra",
 ];
 
 const BUCKET_NOUNS: &[&str] = &[
-    "artifacts", "reports", "exports", "uploads",
-    "media", "configs", "secrets", "audit", "events",
+    "artifacts",
+    "reports",
+    "exports",
+    "uploads",
+    "media",
+    "configs",
+    "secrets",
+    "audit",
+    "events",
 ];
 
 const USER_FIRST: &[&str] = &[
-    "alice", "bob", "carol", "dave", "eve", "frank",
-    "grace", "henry", "irene", "jack", "karen", "liam",
-    "mia", "nora", "oscar", "petra", "quinn", "raj",
-    "sara", "tom", "uma", "victor", "wendy", "xavier",
+    "alice", "bob", "carol", "dave", "eve", "frank", "grace", "henry", "irene", "jack", "karen",
+    "liam", "mia", "nora", "oscar", "petra", "quinn", "raj", "sara", "tom", "uma", "victor",
+    "wendy", "xavier",
 ];
 
 const ROLE_PREFIXES: &[&str] = &[
-    "ec2", "lambda", "ecs", "rds", "s3", "api",
-    "worker", "deploy", "build", "monitor",
+    "ec2", "lambda", "ecs", "rds", "s3", "api", "worker", "deploy", "build", "monitor",
 ];
 
 const ROLE_SUFFIXES: &[&str] = &[
-    "readonly", "fullaccess", "admin", "executor",
-    "power", "limited", "service",
+    "readonly",
+    "fullaccess",
+    "admin",
+    "executor",
+    "power",
+    "limited",
+    "service",
 ];
 
 // ─── LCG PRNG (no external dependency) ───────────────────────────────────────
@@ -154,12 +181,14 @@ impl Lcg {
         // Mix the seed to avoid poor initial state with seed = 0.
         let s = seed.wrapping_add(0x9e3779b97f4a7c15);
         let mut l = Lcg(s);
-        l.next(); l.next(); // warm up
+        l.next();
+        l.next(); // warm up
         l
     }
 
     fn next(&mut self) -> u64 {
-        self.0 = self.0
+        self.0 = self
+            .0
             .wrapping_mul(6_364_136_223_846_793_005)
             .wrapping_add(1_442_695_040_888_963_407);
         self.0
@@ -273,7 +302,7 @@ impl Default for SyntheticConfig {
 // ─── Pre-computed entity records ──────────────────────────────────────────────
 
 struct Ec2Record {
-    instance_id: String,      // "i-0abc1234567890abc"
+    instance_id: String, // "i-0abc1234567890abc"
     instance_type: &'static str,
     state: &'static str,
     region_idx: usize,
@@ -285,13 +314,13 @@ struct Ec2Record {
     vpc_id: String,
     subnet_id: String,
     has_edr: bool,
-    role_idx: Option<usize>,  // instance profile IAM role
+    role_idx: Option<usize>, // instance profile IAM role
     sg_idx: usize,
 }
 
 struct UserRecord {
     username: String,
-    user_id: String,          // "AIDA..."
+    user_id: String, // "AIDA..."
     mfa_active: bool,
     active: bool,
     password_last_used_days: u32,
@@ -300,14 +329,14 @@ struct UserRecord {
 
 struct RoleRecord {
     role_name: String,
-    role_id: String,          // "AROA..."
+    role_id: String, // "AROA..."
     is_admin: bool,
     policy_indices: Vec<usize>, // attached policies
 }
 
 struct PolicyRecord {
     policy_name: &'static str,
-    policy_id: String,        // "ANPA..."
+    policy_id: String, // "ANPA..."
     is_aws_managed: bool,
 }
 
@@ -351,12 +380,8 @@ impl AwsSyntheticConnector {
         let mut rng = Lcg::new(config.seed);
 
         // VPC/subnet IDs — shared pool.
-        let vpc_ids: Vec<String> = (0..4)
-            .map(|_| format!("vpc-{}", rng.hex(17)))
-            .collect();
-        let subnet_ids: Vec<String> = (0..12)
-            .map(|_| format!("subnet-{}", rng.hex(17)))
-            .collect();
+        let vpc_ids: Vec<String> = (0..4).map(|_| format!("vpc-{}", rng.hex(17))).collect();
+        let subnet_ids: Vec<String> = (0..12).map(|_| format!("subnet-{}", rng.hex(17))).collect();
 
         // Security groups.
         let sgs: Vec<SgRecord> = (0..config.sg_count)
@@ -447,14 +472,8 @@ impl AwsSyntheticConnector {
             .collect();
 
         // EC2 instances.
-        let ec2_states_table: Vec<(&str, u8)> = EC2_STATES
-            .iter()
-            .map(|(s, w)| (*s, *w))
-            .collect();
-        let platform_table: Vec<(&str, u8)> = PLATFORMS
-            .iter()
-            .map(|(s, w)| (*s, *w))
-            .collect();
+        let ec2_states_table: Vec<(&str, u8)> = EC2_STATES.iter().map(|(s, w)| (*s, *w)).collect();
+        let platform_table: Vec<(&str, u8)> = PLATFORMS.iter().map(|(s, w)| (*s, *w)).collect();
 
         let ec2: Vec<Ec2Record> = (0..config.ec2_count)
             .map(|_| {
@@ -463,10 +482,16 @@ impl AwsSyntheticConnector {
                 let az = rng.pick(azs);
                 let instance_type = rng.pick(INSTANCE_TYPES);
                 let state = *rng.pick_weighted(
-                    &ec2_states_table.iter().map(|(s, w)| (s, *w)).collect::<Vec<_>>(),
+                    &ec2_states_table
+                        .iter()
+                        .map(|(s, w)| (s, *w))
+                        .collect::<Vec<_>>(),
                 );
                 let platform = *rng.pick_weighted(
-                    &platform_table.iter().map(|(s, w)| (s, *w)).collect::<Vec<_>>(),
+                    &platform_table
+                        .iter()
+                        .map(|(s, w)| (s, *w))
+                        .collect::<Vec<_>>(),
                 );
                 let has_public = rng.prob(0.35);
                 let private_ip = format!(
@@ -514,7 +539,15 @@ impl AwsSyntheticConnector {
             })
             .collect();
 
-        AwsSyntheticConnector { config, ec2, users, roles, policies, buckets, sgs }
+        AwsSyntheticConnector {
+            config,
+            ec2,
+            users,
+            roles,
+            policies,
+            buckets,
+            sgs,
+        }
     }
 }
 
@@ -527,12 +560,12 @@ impl Connector for AwsSyntheticConnector {
     fn steps(&self) -> Vec<StepDefinition> {
         vec![
             // Wave 0 — all independent, run concurrently.
-            step("ec2",              "Emit EC2 instances").build(),
-            step("iam-users",        "Emit IAM users").build(),
-            step("iam-roles",        "Emit IAM roles").build(),
-            step("iam-policies",     "Emit IAM managed policies").build(),
-            step("s3-buckets",       "Emit S3 buckets").build(),
-            step("security-groups",  "Emit VPC security groups").build(),
+            step("ec2", "Emit EC2 instances").build(),
+            step("iam-users", "Emit IAM users").build(),
+            step("iam-roles", "Emit IAM roles").build(),
+            step("iam-policies", "Emit IAM managed policies").build(),
+            step("s3-buckets", "Emit S3 buckets").build(),
+            step("security-groups", "Emit VPC security groups").build(),
             // Wave 1 — relationships + EDR agents reference wave-0 entity keys.
             step("edr-agents", "Emit EDR agents and PROTECTS relationships")
                 .depends_on(&["ec2"])
@@ -643,10 +676,7 @@ impl AwsSyntheticConnector {
 
     fn emit_iam_policies(&self, ctx: &mut StepContext) -> Result<(), ConnectorError> {
         for p in &self.policies {
-            let arn = format!(
-                "arn:aws:iam::aws:policy/{}",
-                p.policy_name
-            );
+            let arn = format!("arn:aws:iam::aws:policy/{}", p.policy_name);
             ctx.emit_entity(
                 entity("aws_iam_policy", p.policy_name)
                     .class("AccessPolicy")
@@ -715,7 +745,12 @@ impl AwsSyntheticConnector {
             }
             let vendor = rng.pick(EDR_VENDORS);
             let agent_id = format!("agent-{i:05}");
-            let agent_version = format!("{}.{}.{}", rng.next() % 8, rng.next() % 20, rng.next() % 100);
+            let agent_version = format!(
+                "{}.{}.{}",
+                rng.next() % 8,
+                rng.next() % 20,
+                rng.next() % 100
+            );
 
             // Emit the EDR agent entity.
             ctx.emit_entity(
@@ -851,7 +886,12 @@ mod tests {
 
     #[test]
     fn entity_counts_match_config() {
-        let cfg = SyntheticConfig { ec2_count: 10, iam_user_count: 5, s3_bucket_count: 4, ..SyntheticConfig::default() };
+        let cfg = SyntheticConfig {
+            ec2_count: 10,
+            iam_user_count: 5,
+            s3_bucket_count: 4,
+            ..SyntheticConfig::default()
+        };
         let c = AwsSyntheticConnector::new(cfg.clone());
         assert_eq!(c.ec2.len(), cfg.ec2_count);
         assert_eq!(c.users.len(), cfg.iam_user_count);
@@ -860,16 +900,28 @@ mod tests {
 
     #[test]
     fn deterministic_same_seed() {
-        let a = AwsSyntheticConnector::new(SyntheticConfig { seed: 1, ..SyntheticConfig::default() });
-        let b = AwsSyntheticConnector::new(SyntheticConfig { seed: 1, ..SyntheticConfig::default() });
+        let a = AwsSyntheticConnector::new(SyntheticConfig {
+            seed: 1,
+            ..SyntheticConfig::default()
+        });
+        let b = AwsSyntheticConnector::new(SyntheticConfig {
+            seed: 1,
+            ..SyntheticConfig::default()
+        });
         assert_eq!(a.ec2[0].instance_id, b.ec2[0].instance_id);
         assert_eq!(a.users[0].username, b.users[0].username);
     }
 
     #[test]
     fn different_seeds_produce_different_data() {
-        let a = AwsSyntheticConnector::new(SyntheticConfig { seed: 1, ..SyntheticConfig::default() });
-        let b = AwsSyntheticConnector::new(SyntheticConfig { seed: 2, ..SyntheticConfig::default() });
+        let a = AwsSyntheticConnector::new(SyntheticConfig {
+            seed: 1,
+            ..SyntheticConfig::default()
+        });
+        let b = AwsSyntheticConnector::new(SyntheticConfig {
+            seed: 2,
+            ..SyntheticConfig::default()
+        });
         assert_ne!(a.ec2[0].instance_id, b.ec2[0].instance_id);
     }
 
@@ -884,7 +936,10 @@ mod tests {
         let c = AwsSyntheticConnector::new(cfg);
         let covered = c.ec2.iter().filter(|e| e.has_edr).count();
         // Allow ±10% tolerance for statistical variation at n=200.
-        assert!(covered >= 80 && covered <= 120, "edr covered={covered}, expected ~100");
+        assert!(
+            (80..=120).contains(&covered),
+            "edr covered={covered}, expected ~100"
+        );
     }
 
     #[test]
@@ -918,8 +973,8 @@ mod tests {
 
     #[tokio::test]
     async fn run_emits_expected_entity_count() {
-        use std::sync::Arc;
         use parallax_connect::scheduler::run_connector;
+        use std::sync::Arc;
 
         let cfg = SyntheticConfig {
             ec2_count: 10,
@@ -939,33 +994,46 @@ mod tests {
             + cfg.iam_role_count
             + cfg.s3_bucket_count
             + cfg.sg_count;
-        assert!(out.entities.len() >= min_entities,
-            "entities={}, expected ≥{}", out.entities.len(), min_entities);
+        assert!(
+            out.entities.len() >= min_entities,
+            "entities={}, expected ≥{}",
+            out.entities.len(),
+            min_entities
+        );
 
         // Relationships emitted.
-        assert!(!out.relationships.is_empty(), "must emit at least some relationships");
+        assert!(
+            !out.relationships.is_empty(),
+            "must emit at least some relationships"
+        );
     }
 
     #[tokio::test]
     async fn entity_types_all_present() {
-        use std::sync::Arc;
         use parallax_connect::scheduler::run_connector;
         use std::collections::HashSet;
+        use std::sync::Arc;
 
         let c = Arc::new(AwsSyntheticConnector::new(SyntheticConfig {
-            ec2_count: 5, iam_user_count: 3, iam_role_count: 3,
-            s3_bucket_count: 3, sg_count: 2, edr_coverage: 1.0,
+            ec2_count: 5,
+            iam_user_count: 3,
+            iam_role_count: 3,
+            s3_bucket_count: 3,
+            sg_count: 2,
+            edr_coverage: 1.0,
             ..SyntheticConfig::default()
         }));
         let out = run_connector(c, "acct", "s1", None).await.unwrap();
 
-        let types: HashSet<&str> = out.entities.iter()
-            .map(|e| e._type.as_str())
-            .collect();
+        let types: HashSet<&str> = out.entities.iter().map(|e| e._type.as_str()).collect();
 
         for expected in &[
-            "aws_ec2_instance", "aws_iam_user", "aws_iam_role",
-            "aws_iam_policy", "aws_s3_bucket", "aws_security_group",
+            "aws_ec2_instance",
+            "aws_iam_user",
+            "aws_iam_role",
+            "aws_iam_policy",
+            "aws_s3_bucket",
+            "aws_security_group",
             "edr_agent",
         ] {
             assert!(types.contains(expected), "missing entity type: {expected}");

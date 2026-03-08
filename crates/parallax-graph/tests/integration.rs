@@ -11,7 +11,7 @@ use parallax_core::{
     timestamp::Timestamp,
 };
 use parallax_graph::GraphReader;
-use parallax_store::{StoreConfig, StorageEngine, WriteBatch};
+use parallax_store::{StorageEngine, StoreConfig, WriteBatch};
 use std::collections::BTreeMap;
 use tempfile::TempDir;
 
@@ -35,7 +35,13 @@ fn make_entity(typ: &str, class: &str, key: &str) -> Entity {
     }
 }
 
-fn make_rel(from_type: &str, from_key: &str, verb: &str, to_type: &str, to_key: &str) -> Relationship {
+fn make_rel(
+    from_type: &str,
+    from_key: &str,
+    verb: &str,
+    to_type: &str,
+    to_key: &str,
+) -> Relationship {
     Relationship {
         id: RelationshipId::derive("acme", from_type, from_key, verb, to_type, to_key),
         from_id: EntityId::derive("acme", from_type, from_key),
@@ -99,7 +105,11 @@ fn multi_hop_traversal_reaches_database() {
     let graph = GraphReader::new(&snap);
 
     let a = EntityId::derive("acme", "host", "a");
-    let results = graph.traverse(a).direction(Direction::Outgoing).max_depth(3).collect();
+    let results = graph
+        .traverse(a)
+        .direction(Direction::Outgoing)
+        .max_depth(3)
+        .collect();
     let ids: Vec<EntityId> = results.iter().map(|r| r.entity.id).collect();
 
     let db1 = EntityId::derive("acme", "database", "db1");

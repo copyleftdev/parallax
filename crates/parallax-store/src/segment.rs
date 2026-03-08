@@ -206,7 +206,11 @@ impl SegmentRef {
         match self.entity_index.binary_search(&id) {
             Ok(pos) => {
                 let e = &self.entities[pos];
-                if e.is_tombstone() { None } else { Some(e) }
+                if e.is_tombstone() {
+                    None
+                } else {
+                    Some(e)
+                }
             }
             Err(_) => None,
         }
@@ -217,7 +221,11 @@ impl SegmentRef {
         match self.relationship_index.binary_search(&id) {
             Ok(pos) => {
                 let r = &self.relationships[pos];
-                if r.is_tombstone() { None } else { Some(r) }
+                if r.is_tombstone() {
+                    None
+                } else {
+                    Some(r)
+                }
             }
             Err(_) => None,
         }
@@ -262,7 +270,10 @@ impl SegmentRef {
 
     /// All live relationships in this segment.
     pub fn all_relationships(&self) -> Vec<&Relationship> {
-        self.relationships.iter().filter(|r| !r.is_tombstone()).collect()
+        self.relationships
+            .iter()
+            .filter(|r| !r.is_tombstone())
+            .collect()
     }
 
     /// Entity count (live only).
@@ -272,7 +283,10 @@ impl SegmentRef {
 
     /// Relationship count (live only).
     pub fn relationship_count(&self) -> usize {
-        self.relationships.iter().filter(|r| !r.is_tombstone()).count()
+        self.relationships
+            .iter()
+            .filter(|r| !r.is_tombstone())
+            .count()
     }
 }
 
@@ -332,7 +346,9 @@ mod tests {
         let seg = SegmentRef::write(&path, 0, vec![entity.clone()], vec![]).unwrap();
         assert_eq!(seg.record_count, 1);
         assert!(seg.get_entity(id).is_some());
-        assert!(seg.get_entity(EntityId::derive("acc", "host", "ghost")).is_none());
+        assert!(seg
+            .get_entity(EntityId::derive("acc", "host", "ghost"))
+            .is_none());
     }
 
     #[test]

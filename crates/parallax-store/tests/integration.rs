@@ -10,7 +10,7 @@ use parallax_core::{
     source::SourceTag,
     timestamp::Timestamp,
 };
-use parallax_store::{StoreConfig, StorageEngine, WriteBatch};
+use parallax_store::{StorageEngine, StoreConfig, WriteBatch};
 use std::collections::BTreeMap;
 use tempfile::TempDir;
 
@@ -94,8 +94,14 @@ fn snapshot_isolation() {
     b2.delete_entity(id);
     engine.write(b2).unwrap();
 
-    assert!(old.get_entity(id).is_some(), "old snapshot must still see h1");
-    assert!(engine.snapshot().get_entity(id).is_none(), "new snapshot must not see h1");
+    assert!(
+        old.get_entity(id).is_some(),
+        "old snapshot must still see h1"
+    );
+    assert!(
+        engine.snapshot().get_entity(id).is_none(),
+        "new snapshot must not see h1"
+    );
 }
 
 /// Cross-session WAL recovery restores all entities.
@@ -213,10 +219,17 @@ fn v02_group_commit_all_entities_survive_reopen() {
 
     let engine2 = open(&dir);
     let snap = engine2.snapshot();
-    assert_eq!(snap.entity_count(), n, "group-committed entities must survive reopen");
+    assert_eq!(
+        snap.entity_count(),
+        n,
+        "group-committed entities must survive reopen"
+    );
     for i in 0..n {
         let id = EntityId::derive("acme", "host", &format!("gc-h{i}"));
-        assert!(snap.get_entity(id).is_some(), "gc-h{i} missing after reopen");
+        assert!(
+            snap.get_entity(id).is_some(),
+            "gc-h{i} missing after reopen"
+        );
     }
 }
 
@@ -229,11 +242,13 @@ fn v02_group_commit_skips_empty_batches() {
     let mut filled = WriteBatch::new();
     filled.upsert_entity(entity("acme", "host", "real"));
 
-    let seqs = engine.write_many(vec![
-        WriteBatch::new(), // empty — skipped
-        filled,
-        WriteBatch::new(), // empty — skipped
-    ]).expect("write_many");
+    let seqs = engine
+        .write_many(vec![
+            WriteBatch::new(), // empty — skipped
+            filled,
+            WriteBatch::new(), // empty — skipped
+        ])
+        .expect("write_many");
 
     // Only one non-empty batch → one WAL entry
     assert_eq!(seqs.len(), 1);

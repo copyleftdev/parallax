@@ -39,7 +39,12 @@ impl IndexStats {
         total_entities: usize,
         total_relationships: usize,
     ) -> Self {
-        IndexStats { type_counts, class_counts, total_entities, total_relationships }
+        IndexStats {
+            type_counts,
+            class_counts,
+            total_entities,
+            total_relationships,
+        }
     }
 }
 
@@ -49,23 +54,45 @@ impl IndexStats {
 #[derive(Debug)]
 pub enum QueryPlan {
     /// Scan entities using an index.
-    IndexScan { index: IndexAccess, filters: Vec<PropertyCondition> },
+    IndexScan {
+        index: IndexAccess,
+        filters: Vec<PropertyCondition>,
+    },
     /// One-hop traversal from all source entities.
-    Traverse { source: Box<QueryPlan>, step: PlannedTraversal },
+    Traverse {
+        source: Box<QueryPlan>,
+        step: PlannedTraversal,
+    },
     /// Negated traversal: keep source entities that do NOT have the expected relationship.
-    NegatedTraverse { source: Box<QueryPlan>, step: PlannedTraversal },
+    NegatedTraverse {
+        source: Box<QueryPlan>,
+        step: PlannedTraversal,
+    },
     /// Count the results of a sub-plan.
     Count { source: Box<QueryPlan> },
     /// Project specific fields from entity results.
-    Project { source: Box<QueryPlan>, fields: Vec<String> },
+    Project {
+        source: Box<QueryPlan>,
+        fields: Vec<String>,
+    },
     /// Limit results.
     Limit { source: Box<QueryPlan>, n: usize },
     /// Bidirectional BFS between two entity sets.
-    ShortestPath { from: Box<QueryPlan>, to: Box<QueryPlan>, max_depth: u32 },
+    ShortestPath {
+        from: Box<QueryPlan>,
+        to: Box<QueryPlan>,
+        max_depth: u32,
+    },
     /// Blast radius from a set of origin entities.
-    BlastRadius { origin: Box<QueryPlan>, max_depth: u32 },
+    BlastRadius {
+        origin: Box<QueryPlan>,
+        max_depth: u32,
+    },
     /// Group entities by a property field and count per group.
-    GroupBy { source: Box<QueryPlan>, field: String },
+    GroupBy {
+        source: Box<QueryPlan>,
+        field: String,
+    },
 }
 
 /// Which index to use for an entity scan.
@@ -114,28 +141,35 @@ fn plan_find(fq: FindQuery, stats: &IndexStats) -> Result<QueryPlan, PlanError> 
 
     // Wrap in GroupBy before Return/Limit.
     if let Some(gb) = fq.group_by {
-        plan = QueryPlan::GroupBy { source: Box::new(plan), field: gb.field };
+        plan = QueryPlan::GroupBy {
+            source: Box::new(plan),
+            field: gb.field,
+        };
     }
 
     // Wrap in Count, Project, or Limit.
     if let Some(rc) = fq.return_clause {
         plan = match rc {
-            ReturnClause::Count => QueryPlan::Count { source: Box::new(plan) },
-            ReturnClause::Fields(fields) => QueryPlan::Project { source: Box::new(plan), fields },
+            ReturnClause::Count => QueryPlan::Count {
+                source: Box::new(plan),
+            },
+            ReturnClause::Fields(fields) => QueryPlan::Project {
+                source: Box::new(plan),
+                fields,
+            },
         };
     }
     if let Some(n) = fq.limit {
-        plan = QueryPlan::Limit { source: Box::new(plan), n };
+        plan = QueryPlan::Limit {
+            source: Box::new(plan),
+            n,
+        };
     }
 
     Ok(plan)
 }
 
-fn plan_traversal_step(
-    source: QueryPlan,
-    step: TraversalStep,
-    stats: &IndexStats,
-) -> QueryPlan {
+fn plan_traversal_step(source: QueryPlan, step: TraversalStep, stats: &IndexStats) -> QueryPlan {
     let edge_class = step.verb.edge_class().map(RelationshipClass::new_unchecked);
     let mut target_filter = step.target;
     // Resolve the target entity filter.
@@ -149,9 +183,15 @@ fn plan_traversal_step(
     };
 
     if step.negated {
-        QueryPlan::NegatedTraverse { source: Box::new(source), step: planned_step }
+        QueryPlan::NegatedTraverse {
+            source: Box::new(source),
+            step: planned_step,
+        }
     } else {
-        QueryPlan::Traverse { source: Box::new(source), step: planned_step }
+        QueryPlan::Traverse {
+            source: Box::new(source),
+            step: planned_step,
+        }
     }
 }
 
@@ -242,7 +282,13 @@ mod tests {
     fn plan_find_host_uses_type_index() {
         let q = parse("FIND host").unwrap();
         let p = plan(q, &stats_with_host_service()).unwrap();
-        assert!(matches!(p, QueryPlan::IndexScan { index: IndexAccess::TypeIndex(_), .. }));
+        assert!(matches!(
+            p,
+            QueryPlan::IndexScan {
+                index: IndexAccess::TypeIndex(_),
+                ..
+            }
+        ));
     }
 
     #[test]
@@ -253,7 +299,13 @@ mod tests {
         stats.total_entities = 10;
         let q = parse("FIND Host").unwrap();
         let p = plan(q, &stats).unwrap();
-        assert!(matches!(p, QueryPlan::IndexScan { index: IndexAccess::ClassIndex(_), .. }));
+        assert!(matches!(
+            p,
+            QueryPlan::IndexScan {
+                index: IndexAccess::ClassIndex(_),
+                ..
+            }
+        ));
     }
 
     #[test]

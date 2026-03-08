@@ -11,10 +11,7 @@ use axum::{
 use compact_str::CompactString;
 use parallax_connect::builder::{entity as build_entity, relationship as build_relationship};
 use parallax_core::{
-    entity::EntityId,
-    property::Value,
-    relationship::RelationshipId,
-    source::SourceTag,
+    entity::EntityId, property::Value, relationship::RelationshipId, source::SourceTag,
     timestamp::Timestamp,
 };
 use parallax_graph::GraphReader;
@@ -225,7 +222,14 @@ pub async fn query(
         QueryResult::Grouped(_) => vec![],
     };
 
-    (StatusCode::OK, Json(QueryResponse { count, entities, error: None }))
+    (
+        StatusCode::OK,
+        Json(QueryResponse {
+            count,
+            entities,
+            error: None,
+        }),
+    )
 }
 
 /// `GET /v1/entities/:id` — direct entity lookup by hex-encoded ID.
@@ -238,7 +242,9 @@ pub async fn get_entity(
         None => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({"error": "invalid entity ID format (expected 32-char hex)"})),
+                Json(
+                    serde_json::json!({"error": "invalid entity ID format (expected 32-char hex)"}),
+                ),
             );
         }
     };
@@ -258,7 +264,10 @@ pub async fn get_entity(
                 "properties": serde_json::to_value(&e.properties).unwrap_or(serde_json::Value::Null),
             })),
         ),
-        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "entity not found"}))),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "entity not found"})),
+        ),
     }
 }
 
@@ -272,7 +281,9 @@ pub async fn get_relationship(
         _ => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({"error": "invalid relationship ID format (expected 32-char hex)"})),
+                Json(
+                    serde_json::json!({"error": "invalid relationship ID format (expected 32-char hex)"}),
+                ),
             );
         }
     };
@@ -351,7 +362,10 @@ pub async fn ingest_sync(
         })
         .collect();
 
-    match state.sync.commit_sync(&req.connector_id, &req.sync_id, entities, relationships) {
+    match state
+        .sync
+        .commit_sync(&req.connector_id, &req.sync_id, entities, relationships)
+    {
         Ok(result) => {
             // Refresh cached stats after successful sync.
             state.refresh_stats();
@@ -516,7 +530,10 @@ pub async fn prometheus_metrics(State(state): State<AppState>) -> impl IntoRespo
 
     (
         StatusCode::OK,
-        [(axum::http::header::CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")],
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "text/plain; version=0.0.4; charset=utf-8",
+        )],
         body,
     )
 }
@@ -565,7 +582,8 @@ pub async fn set_policies(
         }
     };
 
-    let rules: Vec<PolicyRule> = match serde_json::from_value(serde_json::Value::Array(rule_values)) {
+    let rules: Vec<PolicyRule> = match serde_json::from_value(serde_json::Value::Array(rule_values))
+    {
         Ok(r) => r,
         Err(e) => {
             return (
@@ -621,8 +639,14 @@ pub async fn evaluate_policies(State(state): State<AppState>) -> impl IntoRespon
     let graph = GraphReader::new(&snap);
     let results = evaluator.evaluate_all(&graph, QueryLimits::default());
 
-    let pass = results.iter().filter(|r| r.status == RuleStatus::Pass).count();
-    let fail = results.iter().filter(|r| r.status == RuleStatus::Fail).count();
+    let pass = results
+        .iter()
+        .filter(|r| r.status == RuleStatus::Pass)
+        .count();
+    let fail = results
+        .iter()
+        .filter(|r| r.status == RuleStatus::Fail)
+        .count();
     let total = results.len();
 
     let json_results: Vec<_> = results
@@ -653,7 +677,10 @@ pub async fn policy_posture(
     State(state): State<AppState>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl IntoResponse {
-    let framework = params.get("framework").cloned().unwrap_or_else(|| "CIS-Controls-v8".to_owned());
+    let framework = params
+        .get("framework")
+        .cloned()
+        .unwrap_or_else(|| "CIS-Controls-v8".to_owned());
 
     let rules = state.policies.lock().expect("policies lock").clone();
     let stats = state.current_stats();

@@ -31,7 +31,6 @@ use thiserror::Error;
 /// INV-P06: PQL is validated at rule load time, not at evaluation time.
 #[derive(Debug, Clone, Deserialize)]
 pub struct PolicyRule {
-
     /// Unique identifier (e.g. `edr-coverage-001`).
     pub id: String,
     /// Human-readable name.
@@ -136,7 +135,9 @@ fn parse_schedule(s: &str) -> Result<Schedule, String> {
         let connectors = rest.split(',').map(|c| c.trim().to_owned()).collect();
         return Ok(Schedule::OnSync(connectors));
     }
-    Err(format!("unrecognised schedule '{s}' — expected 'manual', 'every:<dur>', or 'on_sync:<ids>'"))
+    Err(format!(
+        "unrecognised schedule '{s}' — expected 'manual', 'every:<dur>', or 'on_sync:<ids>'"
+    ))
 }
 
 /// Parse simple duration strings: "30s", "5m", "2h", "1d".
@@ -173,10 +174,11 @@ pub fn load_rules_from_yaml(path: &Path) -> Result<Vec<PolicyRule>, PolicyError>
         path: path.to_owned(),
         reason: e.to_string(),
     })?;
-    let file: RuleFile = serde_yaml::from_str(&content).map_err(|e| PolicyError::RuleParseError {
-        path: path.to_owned(),
-        reason: e.to_string(),
-    })?;
+    let file: RuleFile =
+        serde_yaml::from_str(&content).map_err(|e| PolicyError::RuleParseError {
+            path: path.to_owned(),
+            reason: e.to_string(),
+        })?;
     Ok(file.rules)
 }
 
@@ -184,7 +186,10 @@ pub fn load_rules_from_yaml(path: &Path) -> Result<Vec<PolicyRule>, PolicyError>
 #[derive(Debug, Error)]
 pub enum PolicyError {
     #[error("Rule '{rule_id}' contains invalid PQL: {parse_error}")]
-    InvalidQuery { rule_id: String, parse_error: String },
+    InvalidQuery {
+        rule_id: String,
+        parse_error: String,
+    },
 
     #[error("Rule '{rule_id}' query exceeded execution limits: {details}")]
     QueryLimitExceeded { rule_id: String, details: String },
@@ -210,7 +215,10 @@ mod tests {
 
     #[test]
     fn parse_schedule_manual() {
-        assert!(matches!(parse_schedule("manual").unwrap(), Schedule::Manual));
+        assert!(matches!(
+            parse_schedule("manual").unwrap(),
+            Schedule::Manual
+        ));
     }
 
     #[test]

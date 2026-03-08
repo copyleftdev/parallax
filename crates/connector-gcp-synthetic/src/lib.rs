@@ -41,6 +41,8 @@
 //! };
 //! ```
 
+#![allow(clippy::explicit_auto_deref)]
+
 use async_trait::async_trait;
 use parallax_connect::{
     builder::{entity, relationship},
@@ -51,10 +53,20 @@ use parallax_connect::{
 // ─── Static lookup tables ─────────────────────────────────────────────────────
 
 const MACHINE_TYPES: &[&str] = &[
-    "e2-micro", "e2-small", "e2-medium", "e2-standard-2", "e2-standard-4",
-    "n1-standard-1", "n1-standard-2", "n1-standard-4", "n1-standard-8",
-    "n2-standard-2", "n2-standard-4", "n2-standard-8",
-    "c2-standard-4", "c2-standard-8",
+    "e2-micro",
+    "e2-small",
+    "e2-medium",
+    "e2-standard-2",
+    "e2-standard-4",
+    "n1-standard-1",
+    "n1-standard-2",
+    "n1-standard-4",
+    "n1-standard-8",
+    "n2-standard-2",
+    "n2-standard-4",
+    "n2-standard-8",
+    "c2-standard-4",
+    "c2-standard-8",
     "m1-megamem-96",
 ];
 
@@ -71,52 +83,74 @@ const REGIONS: &[&str] = &[
 
 // Parallel zone lists, indexed with REGIONS.
 const ZONES: &[&[&str]] = &[
-    &["us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"],
+    &[
+        "us-central1-a",
+        "us-central1-b",
+        "us-central1-c",
+        "us-central1-f",
+    ],
     &["us-east1-b", "us-east1-c", "us-east1-d"],
     &["us-west1-a", "us-west1-b", "us-west1-c"],
     &["us-west2-a", "us-west2-b", "us-west2-c"],
     &["europe-west1-b", "europe-west1-c", "europe-west1-d"],
     &["europe-west2-a", "europe-west2-b", "europe-west2-c"],
     &["asia-east1-a", "asia-east1-b", "asia-east1-c"],
-    &["asia-northeast1-a", "asia-northeast1-b", "asia-northeast1-c"],
+    &[
+        "asia-northeast1-a",
+        "asia-northeast1-b",
+        "asia-northeast1-c",
+    ],
 ];
 
 const INSTANCE_STATES: &[(&str, u8)] = &[
-    ("RUNNING",     75),
-    ("TERMINATED",  10),
-    ("STOPPED",     10),
-    ("STAGING",      5),
+    ("RUNNING", 75),
+    ("TERMINATED", 10),
+    ("STOPPED", 10),
+    ("STAGING", 5),
 ];
 
-const STORAGE_CLASSES: &[&str] = &[
-    "STANDARD", "NEARLINE", "COLDLINE", "ARCHIVE",
-];
+const STORAGE_CLASSES: &[&str] = &["STANDARD", "NEARLINE", "COLDLINE", "ARCHIVE"];
 
 const BUCKET_ADJECTIVES: &[&str] = &[
-    "prod", "staging", "dev", "archive", "backup",
-    "logs", "assets", "data", "shared", "infra",
+    "prod", "staging", "dev", "archive", "backup", "logs", "assets", "data", "shared", "infra",
 ];
 
 const BUCKET_NOUNS: &[&str] = &[
-    "artifacts", "reports", "exports", "uploads",
-    "media", "configs", "builds", "audit", "events",
+    "artifacts",
+    "reports",
+    "exports",
+    "uploads",
+    "media",
+    "configs",
+    "builds",
+    "audit",
+    "events",
 ];
 
 const USER_FIRST: &[&str] = &[
-    "alice", "bob", "carol", "dave", "eve", "frank",
-    "grace", "henry", "irene", "jack", "karen", "liam",
-    "mia", "nora", "oscar", "petra", "quinn", "raj",
-    "sara", "tom", "uma", "victor", "wendy", "xavier",
+    "alice", "bob", "carol", "dave", "eve", "frank", "grace", "henry", "irene", "jack", "karen",
+    "liam", "mia", "nora", "oscar", "petra", "quinn", "raj", "sara", "tom", "uma", "victor",
+    "wendy", "xavier",
 ];
 
 const USER_DOMAINS: &[&str] = &[
-    "example.com", "corp.example.com", "eng.example.com", "admin.example.com",
+    "example.com",
+    "corp.example.com",
+    "eng.example.com",
+    "admin.example.com",
 ];
 
 const SA_PREFIXES: &[&str] = &[
-    "compute-engine", "cloudbuild", "dataflow", "pubsub",
-    "bigquery", "gke-node", "cloud-run", "app-deploy",
-    "monitoring", "logging",
+    "compute-engine",
+    "cloudbuild",
+    "dataflow",
+    "pubsub",
+    "bigquery",
+    "gke-node",
+    "cloud-run",
+    "app-deploy",
+    "monitoring",
+    "logging",
 ];
 
 /// GCP predefined roles that are high-privilege.
@@ -144,9 +178,15 @@ const LIMITED_ROLES: &[&str] = &[
 ];
 
 const FIREWALL_TARGETS: &[&str] = &[
-    "http-server", "https-server", "ssh", "rdp",
-    "internal", "lb-health-check", "allow-ssh-iap",
-    "allow-internal", "deny-all-ingress",
+    "http-server",
+    "https-server",
+    "ssh",
+    "rdp",
+    "internal",
+    "lb-health-check",
+    "allow-ssh-iap",
+    "allow-internal",
+    "deny-all-ingress",
 ];
 
 const EDR_VENDORS: &[&str] = &[
@@ -165,12 +205,14 @@ impl Lcg {
     fn new(seed: u64) -> Self {
         let s = seed.wrapping_add(0x9e3779b97f4a7c15);
         let mut l = Lcg(s);
-        l.next(); l.next();
+        l.next();
+        l.next();
         l
     }
 
     fn next(&mut self) -> u64 {
-        self.0 = self.0
+        self.0 = self
+            .0
             .wrapping_mul(6_364_136_223_846_793_005)
             .wrapping_add(1_442_695_040_888_963_407);
         self.0
@@ -279,7 +321,7 @@ impl Default for SyntheticConfig {
 
 struct InstanceRecord {
     name: String,
-    instance_id: String,      // numeric instance ID
+    instance_id: String, // numeric instance ID
     machine_type: &'static str,
     status: &'static str,
     region_idx: usize,
@@ -288,8 +330,8 @@ struct InstanceRecord {
     public_ip: Option<String>,
     has_edr: bool,
     os_login: bool,
-    sa_idx: Option<usize>,    // service account binding
-    fw_idx: usize,            // primary firewall rule
+    sa_idx: Option<usize>, // service account binding
+    fw_idx: usize,         // primary firewall rule
 }
 
 struct UserRecord {
@@ -309,7 +351,7 @@ struct ServiceAccountRecord {
 }
 
 struct RoleRecord {
-    role_id: String,     // e.g. "roles/compute.admin" or "projects/p/roles/custom-001"
+    role_id: String, // e.g. "roles/compute.admin" or "projects/p/roles/custom-001"
     title: String,
     is_admin: bool,
     is_custom: bool,
@@ -328,8 +370,8 @@ struct BucketRecord {
 struct FirewallRecord {
     name: String,
     rule_id: String,
-    direction: &'static str,  // "INGRESS" or "EGRESS"
-    action: &'static str,     // "ALLOW" or "DENY"
+    direction: &'static str, // "INGRESS" or "EGRESS"
+    action: &'static str,    // "ALLOW" or "DENY"
     priority: u32,
     target_tag: &'static str,
 }
@@ -415,7 +457,13 @@ impl GcpSyntheticConnector {
                         }
                     })
                     .collect();
-                ServiceAccountRecord { email, display_name, disabled, key_count, role_indices }
+                ServiceAccountRecord {
+                    email,
+                    display_name,
+                    disabled,
+                    key_count,
+                    role_indices,
+                }
             })
             .collect();
 
@@ -440,7 +488,13 @@ impl GcpSyntheticConnector {
                 let role_indices: Vec<usize> = (0..n_roles)
                     .map(|_| rng.next() as usize % roles.len())
                     .collect();
-                UserRecord { email, display_name, mfa_active, active, role_indices }
+                UserRecord {
+                    email,
+                    display_name,
+                    mfa_active,
+                    active,
+                    role_indices,
+                }
             })
             .collect();
 
@@ -489,9 +543,8 @@ impl GcpSyntheticConnector {
                 let region_idx = rng.next() as usize % REGIONS.len();
                 let zone = *rng.pick(ZONES[region_idx]);
                 let machine_type = rng.pick(MACHINE_TYPES);
-                let status = *rng.pick_weighted(
-                    &state_table.iter().map(|(s, w)| (s, *w)).collect::<Vec<_>>(),
-                );
+                let status = *rng
+                    .pick_weighted(&state_table.iter().map(|(s, w)| (s, *w)).collect::<Vec<_>>());
                 let has_public = rng.prob(0.30);
                 let private_ip = format!(
                     "10.{}.{}.{}",
@@ -554,12 +607,12 @@ impl Connector for GcpSyntheticConnector {
     fn steps(&self) -> Vec<StepDefinition> {
         vec![
             // Wave 0 — all independent, run concurrently.
-            step("compute-instances",  "Emit Compute Engine instances").build(),
-            step("iam-users",          "Emit IAM user principals").build(),
-            step("service-accounts",   "Emit IAM service accounts").build(),
-            step("iam-roles",          "Emit IAM roles").build(),
-            step("storage-buckets",    "Emit Cloud Storage buckets").build(),
-            step("firewall-rules",     "Emit VPC firewall rules").build(),
+            step("compute-instances", "Emit Compute Engine instances").build(),
+            step("iam-users", "Emit IAM user principals").build(),
+            step("service-accounts", "Emit IAM service accounts").build(),
+            step("iam-roles", "Emit IAM roles").build(),
+            step("storage-buckets", "Emit Cloud Storage buckets").build(),
+            step("firewall-rules", "Emit VPC firewall rules").build(),
             // Wave 1 — relationships + EDR agents reference wave-0 entity keys.
             step("edr-agents", "Emit EDR agents and PROTECTS relationships")
                 .depends_on(&["compute-instances"])
@@ -567,9 +620,12 @@ impl Connector for GcpSyntheticConnector {
             step("iam-relationships", "Emit IAM binding relationships")
                 .depends_on(&["iam-users", "service-accounts", "iam-roles"])
                 .build(),
-            step("compute-relationships", "Emit compute SA and firewall relationships")
-                .depends_on(&["compute-instances", "service-accounts", "firewall-rules"])
-                .build(),
+            step(
+                "compute-relationships",
+                "Emit compute SA and firewall relationships",
+            )
+            .depends_on(&["compute-instances", "service-accounts", "firewall-rules"])
+            .build(),
         ]
     }
 
@@ -579,14 +635,14 @@ impl Connector for GcpSyntheticConnector {
         ctx: &mut StepContext,
     ) -> Result<(), ConnectorError> {
         match step_id {
-            "compute-instances"    => self.emit_compute_instances(ctx),
-            "iam-users"            => self.emit_iam_users(ctx),
-            "service-accounts"     => self.emit_service_accounts(ctx),
-            "iam-roles"            => self.emit_iam_roles(ctx),
-            "storage-buckets"      => self.emit_storage_buckets(ctx),
-            "firewall-rules"       => self.emit_firewall_rules(ctx),
-            "edr-agents"           => self.emit_edr_agents(ctx),
-            "iam-relationships"    => self.emit_iam_relationships(ctx),
+            "compute-instances" => self.emit_compute_instances(ctx),
+            "iam-users" => self.emit_iam_users(ctx),
+            "service-accounts" => self.emit_service_accounts(ctx),
+            "iam-roles" => self.emit_iam_roles(ctx),
+            "storage-buckets" => self.emit_storage_buckets(ctx),
+            "firewall-rules" => self.emit_firewall_rules(ctx),
+            "edr-agents" => self.emit_edr_agents(ctx),
+            "iam-relationships" => self.emit_iam_relationships(ctx),
             "compute-relationships" => self.emit_compute_relationships(ctx),
             other => Err(ConnectorError::UnknownStep(other.to_owned())),
         }
@@ -681,10 +737,7 @@ impl GcpSyntheticConnector {
 
     fn emit_storage_buckets(&self, ctx: &mut StepContext) -> Result<(), ConnectorError> {
         for b in &self.buckets {
-            let self_link = format!(
-                "https://www.googleapis.com/storage/v1/b/{}",
-                b.name
-            );
+            let self_link = format!("https://www.googleapis.com/storage/v1/b/{}", b.name);
             ctx.emit_entity(
                 entity("gcp_storage_bucket", &b.name)
                     .class("DataStore")
@@ -890,8 +943,14 @@ mod tests {
 
     #[test]
     fn deterministic_same_seed() {
-        let a = GcpSyntheticConnector::new(SyntheticConfig { seed: 7, ..SyntheticConfig::default() });
-        let b = GcpSyntheticConnector::new(SyntheticConfig { seed: 7, ..SyntheticConfig::default() });
+        let a = GcpSyntheticConnector::new(SyntheticConfig {
+            seed: 7,
+            ..SyntheticConfig::default()
+        });
+        let b = GcpSyntheticConnector::new(SyntheticConfig {
+            seed: 7,
+            ..SyntheticConfig::default()
+        });
         assert_eq!(a.instances[0].name, b.instances[0].name);
         assert_eq!(a.instances[0].instance_id, b.instances[0].instance_id);
         assert_eq!(a.users[0].email, b.users[0].email);
@@ -899,8 +958,14 @@ mod tests {
 
     #[test]
     fn different_seeds_produce_different_data() {
-        let a = GcpSyntheticConnector::new(SyntheticConfig { seed: 1, ..SyntheticConfig::default() });
-        let b = GcpSyntheticConnector::new(SyntheticConfig { seed: 2, ..SyntheticConfig::default() });
+        let a = GcpSyntheticConnector::new(SyntheticConfig {
+            seed: 1,
+            ..SyntheticConfig::default()
+        });
+        let b = GcpSyntheticConnector::new(SyntheticConfig {
+            seed: 2,
+            ..SyntheticConfig::default()
+        });
         assert_ne!(a.instances[0].instance_id, b.instances[0].instance_id);
     }
 
@@ -914,7 +979,10 @@ mod tests {
         };
         let c = GcpSyntheticConnector::new(cfg);
         let covered = c.instances.iter().filter(|e| e.has_edr).count();
-        assert!(covered >= 80 && covered <= 120, "edr covered={covered}, expected ~100");
+        assert!(
+            (80..=120).contains(&covered),
+            "edr covered={covered}, expected ~100"
+        );
     }
 
     #[test]
@@ -923,10 +991,12 @@ mod tests {
         assert!(c.instances.iter().all(|i| i.has_edr));
         assert!(c.users.iter().all(|u| u.mfa_active));
         assert!(c.buckets.iter().all(|b| !b.public));
-        assert!(c.roles.iter().filter(|r| r.is_admin).count() == 0
-            || c.service_accounts.iter().all(|sa| {
-                sa.role_indices.iter().all(|&ri| !c.roles[ri].is_admin)
-            }));
+        assert!(
+            c.roles.iter().filter(|r| r.is_admin).count() == 0
+                || c.service_accounts
+                    .iter()
+                    .all(|sa| { sa.role_indices.iter().all(|&ri| !c.roles[ri].is_admin) })
+        );
     }
 
     #[test]
@@ -948,8 +1018,8 @@ mod tests {
 
     #[tokio::test]
     async fn run_emits_expected_entity_count() {
-        use std::sync::Arc;
         use parallax_connect::scheduler::run_connector;
+        use std::sync::Arc;
 
         let cfg = SyntheticConfig {
             instance_count: 10,
@@ -970,16 +1040,21 @@ mod tests {
             + cfg.firewall_rule_count;
         assert!(
             out.entities.len() >= min_entities,
-            "entities={}, expected ≥{}", out.entities.len(), min_entities
+            "entities={}, expected ≥{}",
+            out.entities.len(),
+            min_entities
         );
-        assert!(!out.relationships.is_empty(), "must emit at least some relationships");
+        assert!(
+            !out.relationships.is_empty(),
+            "must emit at least some relationships"
+        );
     }
 
     #[tokio::test]
     async fn entity_types_all_present() {
-        use std::sync::Arc;
         use parallax_connect::scheduler::run_connector;
         use std::collections::HashSet;
+        use std::sync::Arc;
 
         let c = Arc::new(GcpSyntheticConnector::new(SyntheticConfig {
             instance_count: 5,
@@ -992,9 +1067,7 @@ mod tests {
         }));
         let out = run_connector(c, "proj", "s1", None).await.unwrap();
 
-        let types: HashSet<&str> = out.entities.iter()
-            .map(|e| e._type.as_str())
-            .collect();
+        let types: HashSet<&str> = out.entities.iter().map(|e| e._type.as_str()).collect();
 
         for expected in &[
             "gcp_compute_instance",

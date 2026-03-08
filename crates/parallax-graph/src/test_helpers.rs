@@ -13,7 +13,7 @@ use parallax_core::{
     source::SourceTag,
     timestamp::Timestamp,
 };
-use parallax_store::{StoreConfig, StorageEngine, WriteBatch};
+use parallax_store::{StorageEngine, StoreConfig, WriteBatch};
 use tempfile::TempDir;
 
 /// Fluent graph builder for test scenarios.
@@ -53,7 +53,8 @@ impl GraphBuilder {
     ) -> &mut Self {
         self.host(account, key);
         let id = EntityId::derive(account, "host", key);
-        self.pending_props.push((id, prop_key.to_owned(), prop_val.into()));
+        self.pending_props
+            .push((id, prop_key.to_owned(), prop_val.into()));
         self
     }
 
@@ -85,7 +86,8 @@ impl GraphBuilder {
         prop_val: impl Into<Value>,
     ) -> &mut Self {
         let id = EntityId::derive(account, typ, key);
-        self.pending_props.push((id, prop_key.to_owned(), prop_val.into()));
+        self.pending_props
+            .push((id, prop_key.to_owned(), prop_val.into()));
         self
     }
 
@@ -101,8 +103,7 @@ impl GraphBuilder {
     ) -> &mut Self {
         let from_id = EntityId::derive(account, from_type, from_key);
         let to_id = EntityId::derive(account, to_type, to_key);
-        let rel_id =
-            RelationshipId::derive(account, from_type, from_key, class, to_type, to_key);
+        let rel_id = RelationshipId::derive(account, from_type, from_key, class, to_type, to_key);
         let rel = Relationship {
             id: rel_id,
             from_id,
@@ -143,7 +144,9 @@ where
         let snap = engine.snapshot();
         if let Some(existing) = snap.get_entity(entity_id) {
             let mut updated = existing.clone();
-            updated.properties.insert(CompactString::new(&prop_key), prop_val);
+            updated
+                .properties
+                .insert(CompactString::new(&prop_key), prop_val);
             let mut batch = WriteBatch::new();
             batch.upsert_entity(updated);
             drop(snap);

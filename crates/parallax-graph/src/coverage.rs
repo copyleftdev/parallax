@@ -98,9 +98,7 @@ impl<'snap> CoverageGapBuilder<'snap> {
         // 2. For each candidate, check adjacency for the expected relationship.
         candidates
             .into_iter()
-            .filter(|entity| {
-                !self.has_expected_relationship(entity)
-            })
+            .filter(|entity| !self.has_expected_relationship(entity))
             .collect()
     }
 

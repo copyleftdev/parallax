@@ -59,7 +59,9 @@ pub fn compute_posture(
             if mapping.framework != framework {
                 continue;
             }
-            let entry = control_stats.entry(mapping.control.clone()).or_insert((0, 0));
+            let entry = control_stats
+                .entry(mapping.control.clone())
+                .or_insert((0, 0));
             match result.status {
                 RuleStatus::Pass => entry.0 += 1,
                 RuleStatus::Fail => entry.1 += 1,
@@ -80,13 +82,26 @@ pub fn compute_posture(
             } else {
                 ControlStatus::Partial
             };
-            ControlPosture { control_id, status, rule_count: pass + fail, pass_count: pass, fail_count: fail }
+            ControlPosture {
+                control_id,
+                status,
+                rule_count: pass + fail,
+                pass_count: pass,
+                fail_count: fail,
+            }
         })
         .collect();
 
     let total = controls.len();
-    let passing = controls.iter().filter(|c| c.status == ControlStatus::Pass).count();
-    let overall_score = if total == 0 { 1.0 } else { passing as f64 / total as f64 };
+    let passing = controls
+        .iter()
+        .filter(|c| c.status == ControlStatus::Pass)
+        .count();
+    let overall_score = if total == 0 {
+        1.0
+    } else {
+        passing as f64 / total as f64
+    };
 
     FrameworkPosture {
         framework: framework.to_owned(),
@@ -99,14 +114,17 @@ pub fn compute_posture(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rule::{FrameworkMapping, PolicyRule};
     use crate::evaluator::{RuleResult, RuleStatus};
+    use crate::rule::{FrameworkMapping, PolicyRule};
     use parallax_core::timestamp::Timestamp;
     use std::time::Duration;
 
     fn rule_with_framework(id: &str, framework: &str, control: &str) -> PolicyRule {
         let mut r = PolicyRule::new(id, id, "FIND host");
-        r.frameworks.push(FrameworkMapping { framework: framework.into(), control: control.into() });
+        r.frameworks.push(FrameworkMapping {
+            framework: framework.into(),
+            control: control.into(),
+        });
         r
     }
 

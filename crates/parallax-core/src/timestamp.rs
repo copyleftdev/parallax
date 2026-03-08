@@ -10,7 +10,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Combines wall-clock milliseconds with a logical counter to provide
 /// unique, monotonically increasing timestamps even when wall clocks
 /// are close together.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 pub struct Timestamp {
     /// Milliseconds since Unix epoch.
     pub wall_ms: u64,
@@ -68,7 +70,6 @@ impl Timestamp {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,9 +97,18 @@ mod tests {
 
     #[test]
     fn ordering_wall_then_logical() {
-        let a = Timestamp { wall_ms: 100, logical: 5 };
-        let b = Timestamp { wall_ms: 100, logical: 6 };
-        let c = Timestamp { wall_ms: 101, logical: 0 };
+        let a = Timestamp {
+            wall_ms: 100,
+            logical: 5,
+        };
+        let b = Timestamp {
+            wall_ms: 100,
+            logical: 6,
+        };
+        let c = Timestamp {
+            wall_ms: 101,
+            logical: 0,
+        };
         assert!(a < b);
         assert!(b < c);
     }

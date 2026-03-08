@@ -207,7 +207,9 @@ impl WriteAheadLog {
                 self.active_size + pending_size + u64::from(entry_len) > self.max_segment_size;
             if would_overflow {
                 if !pending.is_empty() {
-                    self.active.write_all(&pending).map_err(StoreError::WalWrite)?;
+                    self.active
+                        .write_all(&pending)
+                        .map_err(StoreError::WalWrite)?;
                     self.active_size += pending_size;
                     pending.clear();
                     pending_size = 0;
@@ -228,7 +230,9 @@ impl WriteAheadLog {
 
         // Write all remaining entries in one shot, then fsync once (INV-S01).
         if !pending.is_empty() {
-            self.active.write_all(&pending).map_err(StoreError::WalWrite)?;
+            self.active
+                .write_all(&pending)
+                .map_err(StoreError::WalWrite)?;
             self.active.sync_data().map_err(StoreError::WalWrite)?;
             self.active_size += pending_size;
         }
@@ -395,7 +399,10 @@ fn recover_batches(
             "WAL: recovery stopped at corrupt entry; some data may be lost"
         );
     } else {
-        info!(recovered = batches.len(), last_seq, "WAL: recovery complete");
+        info!(
+            recovered = batches.len(),
+            last_seq, "WAL: recovery complete"
+        );
     }
 
     Ok((batches, last_seq))
@@ -439,9 +446,7 @@ fn read_entry(reader: &mut impl Read) -> Result<Option<WalEntry>, StoreError> {
     // Read payload (len - 20 bytes).
     let payload_len = len - MIN_ENTRY_SIZE;
     let mut payload = vec![0u8; payload_len];
-    reader
-        .read_exact(&mut payload)
-        .map_err(StoreError::WalIo)?;
+    reader.read_exact(&mut payload).map_err(StoreError::WalIo)?;
 
     // Read stored CRC (4 bytes, u32 LE).
     let mut crc_buf = [0u8; 4];
@@ -470,8 +475,7 @@ mod tests {
     #[test]
     fn round_trip_single_batch() {
         let dir = tmp_dir();
-        let (mut wal, recovered) =
-            WriteAheadLog::open(dir.path(), 64 * 1024 * 1024, 0).unwrap();
+        let (mut wal, recovered) = WriteAheadLog::open(dir.path(), 64 * 1024 * 1024, 0).unwrap();
         assert!(recovered.is_empty());
 
         let mut batch = WriteBatch::new();
@@ -482,8 +486,7 @@ mod tests {
         drop(wal);
 
         // Re-open and recover.
-        let (_wal2, recovered2) =
-            WriteAheadLog::open(dir.path(), 64 * 1024 * 1024, 0).unwrap();
+        let (_wal2, recovered2) = WriteAheadLog::open(dir.path(), 64 * 1024 * 1024, 0).unwrap();
         assert_eq!(recovered2.len(), 1);
         assert_eq!(recovered2[0].len(), 1);
     }

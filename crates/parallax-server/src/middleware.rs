@@ -108,7 +108,8 @@ pub async fn request_id_middleware(mut req: Request<Body>, next: Next) -> Respon
     let id_value = HeaderValue::from_str(&id).unwrap_or_else(|_| HeaderValue::from_static(""));
 
     // Inject into request headers so handlers can read it.
-    req.headers_mut().insert(X_REQUEST_ID.clone(), id_value.clone());
+    req.headers_mut()
+        .insert(X_REQUEST_ID.clone(), id_value.clone());
 
     let mut resp = next.run(req).await;
 

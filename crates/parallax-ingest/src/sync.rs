@@ -73,8 +73,16 @@ impl SyncEngine {
             let snap = engine.snapshot();
             // Validate referential integrity and class/verb constraints (INV-04).
             validate_sync_batch(&entities, &relationships, &snap)?;
-            let ents = snap.entities_by_source(connector_id).into_iter().cloned().collect::<Vec<_>>();
-            let rels = snap.relationships_by_source(connector_id).into_iter().cloned().collect::<Vec<_>>();
+            let ents = snap
+                .entities_by_source(connector_id)
+                .into_iter()
+                .cloned()
+                .collect::<Vec<_>>();
+            let rels = snap
+                .relationships_by_source(connector_id)
+                .into_iter()
+                .cloned()
+                .collect::<Vec<_>>();
             (ents, rels)
         };
 
@@ -89,12 +97,18 @@ impl SyncEngine {
 
         for entity in &entities {
             match existing_entity_map.get(&entity.id) {
-                None => { batch.upsert_entity(entity.clone()); stats.entities_created += 1; }
+                None => {
+                    batch.upsert_entity(entity.clone());
+                    stats.entities_created += 1;
+                }
                 // M3 fix: compare full entity content, not just properties.
                 Some(ex) if !entities_equivalent(ex, entity) => {
-                    batch.upsert_entity(entity.clone()); stats.entities_updated += 1;
+                    batch.upsert_entity(entity.clone());
+                    stats.entities_updated += 1;
                 }
-                Some(_) => { stats.entities_unchanged += 1; }
+                Some(_) => {
+                    stats.entities_unchanged += 1;
+                }
             }
         }
         for existing in &existing_entities {
@@ -105,11 +119,17 @@ impl SyncEngine {
         }
         for rel in &relationships {
             match existing_rel_map.get(&rel.id) {
-                None => { batch.upsert_relationship(rel.clone()); stats.relationships_created += 1; }
-                Some(ex) if !relationships_equivalent(ex, rel) => {
-                    batch.upsert_relationship(rel.clone()); stats.relationships_updated += 1;
+                None => {
+                    batch.upsert_relationship(rel.clone());
+                    stats.relationships_created += 1;
                 }
-                Some(_) => { stats.relationships_unchanged += 1; }
+                Some(ex) if !relationships_equivalent(ex, rel) => {
+                    batch.upsert_relationship(rel.clone());
+                    stats.relationships_updated += 1;
+                }
+                Some(_) => {
+                    stats.relationships_unchanged += 1;
+                }
             }
         }
         for existing in &existing_rels {
@@ -120,7 +140,8 @@ impl SyncEngine {
         }
 
         debug!(
-            connector_id, sync_id,
+            connector_id,
+            sync_id,
             created = stats.entities_created,
             updated = stats.entities_updated,
             deleted = stats.entities_deleted,
@@ -133,7 +154,10 @@ impl SyncEngine {
             engine.write(batch).map_err(SyncError::StoreError)?;
         }
 
-        Ok(SyncResult { sync_id: sync_id.to_string(), stats })
+        Ok(SyncResult {
+            sync_id: sync_id.to_string(),
+            stats,
+        })
     }
 }
 
@@ -153,10 +177,16 @@ pub fn commit_sync_exclusive(
     let snap = engine.snapshot();
     // Validate referential integrity and class/verb constraints (INV-04).
     validate_sync_batch(&entities, &relationships, &snap)?;
-    let existing_entities: Vec<Entity> =
-        snap.entities_by_source(connector_id).into_iter().cloned().collect();
-    let existing_rels: Vec<Relationship> =
-        snap.relationships_by_source(connector_id).into_iter().cloned().collect();
+    let existing_entities: Vec<Entity> = snap
+        .entities_by_source(connector_id)
+        .into_iter()
+        .cloned()
+        .collect();
+    let existing_rels: Vec<Relationship> = snap
+        .relationships_by_source(connector_id)
+        .into_iter()
+        .cloned()
+        .collect();
     drop(snap);
 
     let mut batch = WriteBatch::new();
@@ -169,11 +199,17 @@ pub fn commit_sync_exclusive(
 
     for entity in &entities {
         match existing_entity_map.get(&entity.id) {
-            None => { batch.upsert_entity(entity.clone()); stats.entities_created += 1; }
-            Some(ex) if !entities_equivalent(ex, entity) => {
-                batch.upsert_entity(entity.clone()); stats.entities_updated += 1;
+            None => {
+                batch.upsert_entity(entity.clone());
+                stats.entities_created += 1;
             }
-            Some(_) => { stats.entities_unchanged += 1; }
+            Some(ex) if !entities_equivalent(ex, entity) => {
+                batch.upsert_entity(entity.clone());
+                stats.entities_updated += 1;
+            }
+            Some(_) => {
+                stats.entities_unchanged += 1;
+            }
         }
     }
     for existing in &existing_entities {
@@ -184,11 +220,17 @@ pub fn commit_sync_exclusive(
     }
     for rel in &relationships {
         match existing_rel_map.get(&rel.id) {
-            None => { batch.upsert_relationship(rel.clone()); stats.relationships_created += 1; }
-            Some(ex) if !relationships_equivalent(ex, rel) => {
-                batch.upsert_relationship(rel.clone()); stats.relationships_updated += 1;
+            None => {
+                batch.upsert_relationship(rel.clone());
+                stats.relationships_created += 1;
             }
-            Some(_) => { stats.relationships_unchanged += 1; }
+            Some(ex) if !relationships_equivalent(ex, rel) => {
+                batch.upsert_relationship(rel.clone());
+                stats.relationships_updated += 1;
+            }
+            Some(_) => {
+                stats.relationships_unchanged += 1;
+            }
         }
     }
     for existing in &existing_rels {
@@ -202,7 +244,10 @@ pub fn commit_sync_exclusive(
         engine.write(batch).map_err(SyncError::StoreError)?;
     }
 
-    Ok(SyncResult { sync_id: sync_id.to_string(), stats })
+    Ok(SyncResult {
+        sync_id: sync_id.to_string(),
+        stats,
+    })
 }
 
 // ─── Diff helpers ─────────────────────────────────────────────────────────────
@@ -233,7 +278,7 @@ mod tests {
         source::SourceTag,
         timestamp::Timestamp,
     };
-    use parallax_store::{StoreConfig, StorageEngine};
+    use parallax_store::{StorageEngine, StoreConfig};
     use std::collections::BTreeMap;
     use tempfile::TempDir;
 
@@ -243,7 +288,12 @@ mod tests {
         (engine, dir)
     }
 
-    fn make_entity(connector_id: &str, sync_id: &str, key: &str, props: Vec<(&str, Value)>) -> Entity {
+    fn make_entity(
+        connector_id: &str,
+        sync_id: &str,
+        key: &str,
+        props: Vec<(&str, Value)>,
+    ) -> Entity {
         let id = EntityId::derive("acme", "host", key);
         let mut properties = BTreeMap::new();
         for (k, v) in props {
@@ -317,11 +367,21 @@ mod tests {
     fn updated_properties_trigger_upsert() {
         let (mut engine, _dir) = open_engine();
 
-        let e1 = make_entity("aws", "sync-1", "h1", vec![("state", Value::from("running"))]);
+        let e1 = make_entity(
+            "aws",
+            "sync-1",
+            "h1",
+            vec![("state", Value::from("running"))],
+        );
         commit_sync_exclusive(&mut engine, "aws", "sync-1", vec![e1], vec![]).unwrap();
 
         // Same entity but state changed.
-        let e1_updated = make_entity("aws", "sync-2", "h1", vec![("state", Value::from("stopped"))]);
+        let e1_updated = make_entity(
+            "aws",
+            "sync-2",
+            "h1",
+            vec![("state", Value::from("stopped"))],
+        );
         let result =
             commit_sync_exclusive(&mut engine, "aws", "sync-2", vec![e1_updated], vec![]).unwrap();
         assert_eq!(result.stats.entities_updated, 1);

@@ -69,10 +69,7 @@ pub struct TraversalBuilder<'snap> {
 }
 
 impl<'snap> TraversalBuilder<'snap> {
-    pub(crate) fn new(
-        snapshot: &'snap Snapshot,
-        start: parallax_core::entity::EntityId,
-    ) -> Self {
+    pub(crate) fn new(snapshot: &'snap Snapshot, start: parallax_core::entity::EntityId) -> Self {
         TraversalBuilder {
             snapshot,
             start,
@@ -203,7 +200,10 @@ impl<'snap> TraversalIter<'snap> {
                 self.snapshot.get_entity(cur),
                 self.snapshot.get_relationship(rel_id),
             ) {
-                segments.push(PathSegment { relationship: rel, entity });
+                segments.push(PathSegment {
+                    relationship: rel,
+                    entity,
+                });
             }
             cur = parent_id;
         }
@@ -287,7 +287,9 @@ impl<'snap> Iterator for TraversalIter<'snap> {
                 let neighbor_depth = depth + 1;
 
                 // Record parent for path reconstruction (first time we reach each node).
-                self.parents.entry(neighbor_id).or_insert((current_id, rel_id));
+                self.parents
+                    .entry(neighbor_id)
+                    .or_insert((current_id, rel_id));
 
                 // Enqueue for further expansion regardless of node filter.
                 self.enqueue(neighbor_id, neighbor_depth);
@@ -394,15 +396,23 @@ mod tests {
     #[test]
     fn path_reconstruction_single_hop() {
         let (engine, _dir) = make_graph(|b| {
-            b.host("a", "A").host("a", "B").rel("a", "host", "A", "CONNECTS", "host", "B");
+            b.host("a", "A")
+                .host("a", "B")
+                .rel("a", "host", "A", "CONNECTS", "host", "B");
         });
         let snap = engine.snapshot();
         let id = parallax_core::entity::EntityId::derive("a", "host", "A");
-        let results = TraversalBuilder::new(&snap, id).direction(Direction::Outgoing).max_depth(1).collect();
+        let results = TraversalBuilder::new(&snap, id)
+            .direction(Direction::Outgoing)
+            .max_depth(1)
+            .collect();
         assert_eq!(results.len(), 1);
         let path = results[0].path.as_ref().expect("path must be Some");
         assert_eq!(path.segments.len(), 1);
-        assert_eq!(path.segments[0].entity.id, parallax_core::entity::EntityId::derive("a", "host", "B"));
+        assert_eq!(
+            path.segments[0].entity.id,
+            parallax_core::entity::EntityId::derive("a", "host", "B")
+        );
     }
 
     #[test]
@@ -416,12 +426,18 @@ mod tests {
         });
         let snap = engine.snapshot();
         let id = parallax_core::entity::EntityId::derive("a", "host", "A");
-        let results = TraversalBuilder::new(&snap, id).direction(Direction::Outgoing).max_depth(3).collect();
+        let results = TraversalBuilder::new(&snap, id)
+            .direction(Direction::Outgoing)
+            .max_depth(3)
+            .collect();
         // C is at depth 2 — its path should have 2 segments
         let c_result = results.iter().find(|r| r.depth == 2).expect("C at depth 2");
         let path = c_result.path.as_ref().expect("path must be Some");
         assert_eq!(path.segments.len(), 2);
-        assert_eq!(path.segments[1].entity.id, parallax_core::entity::EntityId::derive("a", "host", "C"));
+        assert_eq!(
+            path.segments[1].entity.id,
+            parallax_core::entity::EntityId::derive("a", "host", "C")
+        );
     }
 
     #[test]

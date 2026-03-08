@@ -139,7 +139,10 @@ impl<'snap> ShortestPathBuilder<'snap> {
 fn expand_frontier(
     snapshot: &Snapshot,
     frontier: &mut VecDeque<EntityId>,
-    visited: &mut HashMap<EntityId, Option<(EntityId, parallax_core::relationship::RelationshipId)>>,
+    visited: &mut HashMap<
+        EntityId,
+        Option<(EntityId, parallax_core::relationship::RelationshipId)>,
+    >,
     edge_classes: &Option<Vec<RelationshipClass>>,
     direction: Direction,
 ) {

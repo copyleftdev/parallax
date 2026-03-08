@@ -73,11 +73,17 @@ pub struct EntityFilter {
 
 impl EntityFilter {
     pub fn wildcard() -> Self {
-        EntityFilter { name: None, kind: EntityFilterKind::Unresolved }
+        EntityFilter {
+            name: None,
+            kind: EntityFilterKind::Unresolved,
+        }
     }
 
     pub fn named(name: String) -> Self {
-        EntityFilter { name: Some(name), kind: EntityFilterKind::Unresolved }
+        EntityFilter {
+            name: Some(name),
+            kind: EntityFilterKind::Unresolved,
+        }
     }
 
     /// Returns `true` if the entity matches this filter (by type or class name).
@@ -188,21 +194,31 @@ impl PropertyCondition {
         match self {
             PropertyCondition::Eq(k, v) => entity.properties.get(k.as_str()) == Some(v),
             PropertyCondition::Ne(k, v) => entity.properties.get(k.as_str()) != Some(v),
-            PropertyCondition::Lt(k, v) => {
-                entity.properties.get(k.as_str()).map(|a| a < v).unwrap_or(false)
-            }
-            PropertyCondition::Lte(k, v) => {
-                entity.properties.get(k.as_str()).map(|a| a <= v).unwrap_or(false)
-            }
-            PropertyCondition::Gt(k, v) => {
-                entity.properties.get(k.as_str()).map(|a| a > v).unwrap_or(false)
-            }
-            PropertyCondition::Gte(k, v) => {
-                entity.properties.get(k.as_str()).map(|a| a >= v).unwrap_or(false)
-            }
-            PropertyCondition::In(k, vals) => {
-                entity.properties.get(k.as_str()).map(|v| vals.contains(v)).unwrap_or(false)
-            }
+            PropertyCondition::Lt(k, v) => entity
+                .properties
+                .get(k.as_str())
+                .map(|a| a < v)
+                .unwrap_or(false),
+            PropertyCondition::Lte(k, v) => entity
+                .properties
+                .get(k.as_str())
+                .map(|a| a <= v)
+                .unwrap_or(false),
+            PropertyCondition::Gt(k, v) => entity
+                .properties
+                .get(k.as_str())
+                .map(|a| a > v)
+                .unwrap_or(false),
+            PropertyCondition::Gte(k, v) => entity
+                .properties
+                .get(k.as_str())
+                .map(|a| a >= v)
+                .unwrap_or(false),
+            PropertyCondition::In(k, vals) => entity
+                .properties
+                .get(k.as_str())
+                .map(|v| vals.contains(v))
+                .unwrap_or(false),
             PropertyCondition::Like(k, pattern) => entity
                 .properties
                 .get(k.as_str())

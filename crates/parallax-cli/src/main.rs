@@ -108,10 +108,18 @@ async fn main() -> Result<()> {
     }
 
     match cli.command {
-        Command::Serve { host, port, data_dir } => {
+        Command::Serve {
+            host,
+            port,
+            data_dir,
+        } => {
             cmd_serve(&host, port, &data_dir).await?;
         }
-        Command::Query { pql, data_dir, limit } => {
+        Command::Query {
+            pql,
+            data_dir,
+            limit,
+        } => {
             cmd_query(&pql, &data_dir, limit)?;
         }
         Command::Stats { data_dir } => {
@@ -139,7 +147,7 @@ async fn cmd_serve(host: &str, port: u16, data_dir: &str) -> Result<()> {
 fn cmd_query(pql: &str, data_dir: &str, limit: usize) -> Result<()> {
     use parallax_graph::GraphReader;
     use parallax_query::{execute, parse, plan, IndexStats, QueryLimits, QueryResult};
-    use parallax_store::{StoreConfig, StorageEngine};
+    use parallax_store::{StorageEngine, StoreConfig};
     use std::collections::HashMap;
 
     let config = StoreConfig::new(data_dir);
@@ -152,16 +160,27 @@ fn cmd_query(pql: &str, data_dir: &str, limit: usize) -> Result<()> {
     let mut class_counts: HashMap<String, usize> = HashMap::new();
     for e in &all {
         *type_counts.entry(e._type.as_str().to_owned()).or_insert(0) += 1;
-        *class_counts.entry(e._class.as_str().to_owned()).or_insert(0) += 1;
+        *class_counts
+            .entry(e._class.as_str().to_owned())
+            .or_insert(0) += 1;
     }
-    let stats = IndexStats::new(type_counts, class_counts, snap.entity_count(), snap.relationship_count());
+    let stats = IndexStats::new(
+        type_counts,
+        class_counts,
+        snap.entity_count(),
+        snap.relationship_count(),
+    );
 
     let ast = parse(pql).map_err(|e| anyhow::anyhow!("Parse error: {e}"))?;
     let query_plan = plan(ast, &stats).map_err(|e| anyhow::anyhow!("Plan error: {e}"))?;
 
     let graph = GraphReader::new(&snap);
-    let limits = QueryLimits { max_results: limit, ..QueryLimits::default() };
-    let result = execute(&query_plan, &graph, limits).map_err(|e| anyhow::anyhow!("Exec error: {e}"))?;
+    let limits = QueryLimits {
+        max_results: limit,
+        ..QueryLimits::default()
+    };
+    let result =
+        execute(&query_plan, &graph, limits).map_err(|e| anyhow::anyhow!("Exec error: {e}"))?;
 
     let count = result.count();
     println!("Results: {count}");
@@ -205,18 +224,22 @@ fn cmd_query(pql: &str, data_dir: &str, limit: usize) -> Result<()> {
 }
 
 fn cmd_stats(data_dir: &str) -> Result<()> {
-    use parallax_store::{StoreConfig, StorageEngine};
+    use parallax_store::{StorageEngine, StoreConfig};
 
     let config = StoreConfig::new(data_dir);
     let engine = StorageEngine::open(config)?;
     let snap = engine.snapshot();
 
     let all = snap.all_entities();
-    let mut type_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-    let mut class_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    let mut type_counts: std::collections::HashMap<String, usize> =
+        std::collections::HashMap::new();
+    let mut class_counts: std::collections::HashMap<String, usize> =
+        std::collections::HashMap::new();
     for e in &all {
         *type_counts.entry(e._type.as_str().to_owned()).or_insert(0) += 1;
-        *class_counts.entry(e._class.as_str().to_owned()).or_insert(0) += 1;
+        *class_counts
+            .entry(e._class.as_str().to_owned())
+            .or_insert(0) += 1;
     }
 
     println!("Parallax Graph Statistics");
@@ -244,8 +267,8 @@ fn cmd_wal_dump(data_dir: &str, verbose: bool) -> Result<()> {
     use parallax_store::{dump_wal, WriteOp};
     use std::path::Path;
 
-    let entries = dump_wal(Path::new(data_dir))
-        .map_err(|e| anyhow::anyhow!("WAL read error: {e}"))?;
+    let entries =
+        dump_wal(Path::new(data_dir)).map_err(|e| anyhow::anyhow!("WAL read error: {e}"))?;
 
     if entries.is_empty() {
         println!("WAL is empty (data_dir: {data_dir})");
@@ -274,7 +297,8 @@ fn cmd_wal_dump(data_dir: &str, verbose: bool) -> Result<()> {
                         println!("    - entity  id={id}");
                     }
                     WriteOp::UpsertRelationship(r) => {
-                        println!("    + rel     [{cls}] {from} → {to}",
+                        println!(
+                            "    + rel     [{cls}] {from} → {to}",
                             cls = r._class.as_str(),
                             from = r.from_id,
                             to = r.to_id,

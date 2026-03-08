@@ -23,7 +23,10 @@ use crate::connector::{topological_waves, Connector, PriorStepData, StepContext}
 use crate::error::{ConnectorError, SyncError};
 use crate::event::SyncEvent;
 
-type StepOutcome = (String, Result<(StepContext, std::time::Duration), ConnectorError>);
+type StepOutcome = (
+    String,
+    Result<(StepContext, std::time::Duration), ConnectorError>,
+);
 
 /// Output collected from a connector run, ready to be committed.
 ///
@@ -56,10 +59,13 @@ pub async fn run_connector(
 ) -> Result<ConnectorOutput, SyncError> {
     let connector_id = connector.name().to_owned();
 
-    emit(&event_tx, SyncEvent::Started {
-        connector_id: connector_id.clone(),
-        sync_id: sync_id.to_owned(),
-    })
+    emit(
+        &event_tx,
+        SyncEvent::Started {
+            connector_id: connector_id.clone(),
+            sync_id: sync_id.to_owned(),
+        },
+    )
     .await;
 
     let steps = connector.steps();
@@ -72,7 +78,13 @@ pub async fn run_connector(
     for wave in waves {
         // Emit StepStarted for each step in the wave before spawning.
         for step_id in &wave {
-            emit(&event_tx, SyncEvent::StepStarted { step_id: step_id.clone() }).await;
+            emit(
+                &event_tx,
+                SyncEvent::StepStarted {
+                    step_id: step_id.clone(),
+                },
+            )
+            .await;
         }
 
         // Spawn all steps in the wave concurrently.
@@ -111,12 +123,15 @@ pub async fn run_connector(
                         new_prior.insert(b);
                     }
 
-                    emit(&event_tx, SyncEvent::StepCompleted {
-                        step_id: step_id.clone(),
-                        entities: step_entities,
-                        relationships: step_rels,
-                        duration: elapsed,
-                    })
+                    emit(
+                        &event_tx,
+                        SyncEvent::StepCompleted {
+                            step_id: step_id.clone(),
+                            entities: step_entities,
+                            relationships: step_rels,
+                            duration: elapsed,
+                        },
+                    )
                     .await;
 
                     // Collect materialised entities and relationships.
@@ -132,10 +147,13 @@ pub async fn run_connector(
                 }
                 Ok((step_id, Err(e))) => {
                     warn!(step_id = %step_id, error = %e, "Step failed");
-                    emit(&event_tx, SyncEvent::StepFailed {
-                        step_id: step_id.clone(),
-                        error: e,
-                    })
+                    emit(
+                        &event_tx,
+                        SyncEvent::StepFailed {
+                            step_id: step_id.clone(),
+                            error: e,
+                        },
+                    )
                     .await;
                     // Continue with other steps in the wave (INV-C06).
                 }
@@ -173,10 +191,10 @@ async fn emit(tx: &Option<&tokio::sync::mpsc::Sender<SyncEvent>>, event: SyncEve
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
     use crate::builder::entity;
     use crate::connector::{step, StepDefinition};
     use crate::error::ConnectorError;
+    use async_trait::async_trait;
 
     struct MockConnector {
         steps: Vec<StepDefinition>,
@@ -184,9 +202,13 @@ mod tests {
 
     #[async_trait]
     impl Connector for MockConnector {
-        fn name(&self) -> &str { "mock" }
+        fn name(&self) -> &str {
+            "mock"
+        }
 
-        fn steps(&self) -> Vec<StepDefinition> { self.steps.clone() }
+        fn steps(&self) -> Vec<StepDefinition> {
+            self.steps.clone()
+        }
 
         async fn execute_step(
             &self,
@@ -202,7 +224,9 @@ mod tests {
 
     #[async_trait]
     impl Connector for FailingConnector {
-        fn name(&self) -> &str { "failing" }
+        fn name(&self) -> &str {
+            "failing"
+        }
 
         fn steps(&self) -> Vec<StepDefinition> {
             vec![

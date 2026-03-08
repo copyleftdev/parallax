@@ -20,7 +20,7 @@ use parallax_policy::{
     Severity,
 };
 use parallax_query::{IndexStats, QueryLimits};
-use parallax_store::{StoreConfig, StorageEngine, WriteBatch};
+use parallax_store::{StorageEngine, StoreConfig, WriteBatch};
 use tempfile::{NamedTempFile, TempDir};
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -62,8 +62,10 @@ fn service_entity(key: &str) -> Entity {
 }
 
 fn make_stats(type_counts: &[(&str, usize)]) -> IndexStats {
-    let tc: std::collections::HashMap<String, usize> =
-        type_counts.iter().map(|(k, v)| (k.to_string(), *v)).collect();
+    let tc: std::collections::HashMap<String, usize> = type_counts
+        .iter()
+        .map(|(k, v)| (k.to_string(), *v))
+        .collect();
     let cc = std::collections::HashMap::new();
     let total: usize = tc.values().sum();
     IndexStats::new(tc, cc, total, 0)
@@ -322,7 +324,11 @@ fn v02_multiple_rules_all_evaluated() {
     let graph = GraphReader::new(&snap);
 
     let rules = vec![
-        PolicyRule::new("host-inactive", "Inactive hosts", "FIND host WITH active = false"),
+        PolicyRule::new(
+            "host-inactive",
+            "Inactive hosts",
+            "FIND host WITH active = false",
+        ),
         PolicyRule::new("all-services", "All services", "FIND service"),
         PolicyRule::new("all-hosts", "All hosts", "FIND host"),
     ];
@@ -331,9 +337,9 @@ fn v02_multiple_rules_all_evaluated() {
     let results = evaluator.evaluate_all(&graph, QueryLimits::default());
 
     assert_eq!(results.len(), 3, "all 3 rules must be evaluated");
-    assert!(results[0].is_fail());  // found the inactive host
-    assert!(results[1].is_fail());  // found the service (violations = services found)
-    assert!(results[2].is_fail());  // found the host
+    assert!(results[0].is_fail()); // found the inactive host
+    assert!(results[1].is_fail()); // found the service (violations = services found)
+    assert!(results[2].is_fail()); // found the host
 }
 
 // ─── YAML load → evaluate pipeline ───────────────────────────────────────────
@@ -402,7 +408,10 @@ fn v02_par_evaluate_matches_sequential() {
     let mut batch = WriteBatch::new();
     for i in 0..5 {
         let active = i % 2 == 0;
-        batch.upsert_entity(host_entity(&format!("h{i}"), &[("active", Value::Bool(active))]));
+        batch.upsert_entity(host_entity(
+            &format!("h{i}"),
+            &[("active", Value::Bool(active))],
+        ));
     }
     engine.write(batch).unwrap();
 

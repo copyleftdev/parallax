@@ -11,7 +11,7 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use parallax_server::{router, AppState};
-use parallax_store::{StoreConfig, StorageEngine};
+use parallax_store::{StorageEngine, StoreConfig};
 use tempfile::TempDir;
 use tower::ServiceExt as _;
 
@@ -33,16 +33,24 @@ async fn post(app: axum::Router, path: &str, body: &str) -> (StatusCode, serde_j
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json = serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
     (status, json)
 }
 
 async fn get_json(app: axum::Router, path: &str) -> (StatusCode, serde_json::Value) {
-    let req = Request::builder().method("GET").uri(path).body(Body::empty()).unwrap();
+    let req = Request::builder()
+        .method("GET")
+        .uri(path)
+        .body(Body::empty())
+        .unwrap();
     let resp = app.oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json = serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
     (status, json)
 }
@@ -61,9 +69,11 @@ async fn ingest_then_pql_query_roundtrip() {
 
     // Ingest two hosts via POST /v1/ingest/sync.
     let sync_req = Request::builder()
-        .method("POST").uri("/v1/ingest/sync")
+        .method("POST")
+        .uri("/v1/ingest/sync")
         .header("Content-Type", "application/json")
-        .body(Body::from(r#"{
+        .body(Body::from(
+            r#"{
             "connector_id": "test-connector",
             "sync_id": "sync-001",
             "entities": [
@@ -73,27 +83,36 @@ async fn ingest_then_pql_query_roundtrip() {
                  "display_name": "Server 2", "properties": {"state": "stopped"}}
             ],
             "relationships": []
-        }"#))
+        }"#,
+        ))
         .unwrap();
 
     let resp = app.call(sync_req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(body["entities_created"], 2, "ingest failed: {body}");
 
     // Query via PQL on the same app (same engine).
     let query_req = Request::builder()
-        .method("POST").uri("/v1/query")
+        .method("POST")
+        .uri("/v1/query")
         .header("Content-Type", "application/json")
         .body(Body::from(r#"{"pql": "FIND host"}"#))
         .unwrap();
 
     let qresp = app.call(query_req).await.unwrap();
     assert_eq!(qresp.status(), StatusCode::OK);
-    let qbytes = axum::body::to_bytes(qresp.into_body(), usize::MAX).await.unwrap();
+    let qbytes = axum::body::to_bytes(qresp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let qbody: serde_json::Value = serde_json::from_slice(&qbytes).unwrap();
-    assert_eq!(qbody["count"], 2, "expected 2 results from FIND host, got: {qbody}");
+    assert_eq!(
+        qbody["count"], 2,
+        "expected 2 results from FIND host, got: {qbody}"
+    );
 }
 
 /// Ingest with referential integrity: relationship endpoint must exist.
@@ -137,8 +156,11 @@ async fn ingest_dangling_relationship_rejected() {
     }"#;
 
     let (status, _) = post(app, "/v1/ingest/sync", body).await;
-    assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR,
-        "dangling relationship must be rejected");
+    assert_eq!(
+        status,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "dangling relationship must be rejected"
+    );
 }
 
 /// Stats endpoint reflects ingested entities.
@@ -162,12 +184,17 @@ async fn stats_reflects_ingested_data() {
     // Note: same app handle needed for stats to see the ingested data.
     // This test opens a fresh engine so stats start at 0 and sees the write.
     let sync_req = Request::builder()
-        .method("POST").uri("/v1/ingest/sync")
+        .method("POST")
+        .uri("/v1/ingest/sync")
         .header("Content-Type", "application/json")
-        .body(Body::from(body.to_owned())).unwrap();
+        .body(Body::from(body.to_owned()))
+        .unwrap();
 
-    let stats_req = Request::builder().method("GET").uri("/v1/stats")
-        .body(Body::empty()).unwrap();
+    let stats_req = Request::builder()
+        .method("GET")
+        .uri("/v1/stats")
+        .body(Body::empty())
+        .unwrap();
 
     // Use Tower's `call` via a shared service to maintain state.
     use tower::Service;
@@ -178,7 +205,9 @@ async fn stats_reflects_ingested_data() {
 
     let _ = app3.call(sync_req).await.unwrap();
     let stats_resp = app3.call(stats_req).await.unwrap();
-    let bytes = axum::body::to_bytes(stats_resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(stats_resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let stats: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(stats["total_entities"], 1);
 }
@@ -202,9 +231,11 @@ async fn entity_lookup_after_write() {
     }"#;
 
     let write_req = Request::builder()
-        .method("POST").uri("/v1/ingest/write")
+        .method("POST")
+        .uri("/v1/ingest/write")
         .header("Content-Type", "application/json")
-        .body(Body::from(write_body)).unwrap();
+        .body(Body::from(write_body))
+        .unwrap();
 
     app.call(write_req).await.unwrap();
 
@@ -213,12 +244,16 @@ async fn entity_lookup_after_write() {
     let id_hex = format!("{id}");
 
     let lookup_req = Request::builder()
-        .method("GET").uri(format!("/v1/entities/{id_hex}"))
-        .body(Body::empty()).unwrap();
+        .method("GET")
+        .uri(format!("/v1/entities/{id_hex}"))
+        .body(Body::empty())
+        .unwrap();
 
     let resp = app.call(lookup_req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["type"], "host");
 }
@@ -246,21 +281,29 @@ async fn pql_property_filter_after_ingest() {
     }"#;
 
     let ingest_req = Request::builder()
-        .method("POST").uri("/v1/ingest/sync")
+        .method("POST")
+        .uri("/v1/ingest/sync")
         .header("Content-Type", "application/json")
-        .body(Body::from(ingest)).unwrap();
+        .body(Body::from(ingest))
+        .unwrap();
     app.call(ingest_req).await.unwrap();
 
     // Query: only running hosts.
     let query_req = Request::builder()
-        .method("POST").uri("/v1/query")
+        .method("POST")
+        .uri("/v1/query")
         .header("Content-Type", "application/json")
         .body(Body::from(r#"{"pql": "FIND host WITH state = 'running'"}"#))
         .unwrap();
     let resp = app.call(query_req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(json["count"], 1, "only 1 running host expected, got: {json}");
+    assert_eq!(
+        json["count"], 1,
+        "only 1 running host expected, got: {json}"
+    );
     assert_eq!(json["entities"][0]["entity_type"], "host");
 }

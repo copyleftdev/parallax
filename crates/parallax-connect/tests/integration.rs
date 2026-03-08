@@ -5,14 +5,14 @@
 //! scheduler.
 
 use std::sync::{
-    Arc,
     atomic::{AtomicUsize, Ordering},
+    Arc,
 };
 
 use async_trait::async_trait;
 use parallax_connect::{
-    connector::{step, topological_waves, StepDefinition},
     builder::entity,
+    connector::{step, topological_waves, StepDefinition},
     error::ConnectorError,
     scheduler::run_connector,
     Connector, StepContext,
@@ -55,12 +55,7 @@ fn v02_waves_linear_chain_is_three_waves() {
 /// Diamond: a → {b, c} → d — b and c must be in the same parallel wave.
 #[test]
 fn v02_waves_diamond_b_and_c_parallel() {
-    let steps = make_steps(&[
-        ("a", &[]),
-        ("b", &["a"]),
-        ("c", &["a"]),
-        ("d", &["b", "c"]),
-    ]);
+    let steps = make_steps(&[("a", &[]), ("b", &["a"]), ("c", &["a"]), ("d", &["b", "c"])]);
     let waves = topological_waves(&steps);
     assert_eq!(waves.len(), 3, "diamond = 3 waves: {{a}}, {{b,c}}, {{d}}");
 
@@ -92,7 +87,11 @@ fn v02_waves_wide_fan_parallelism() {
     ]);
     let waves = topological_waves(&steps);
     assert_eq!(waves.len(), 3);
-    assert_eq!(waves[1].len(), 5, "all five leaves must be in the same wave");
+    assert_eq!(
+        waves[1].len(),
+        5,
+        "all five leaves must be in the same wave"
+    );
 }
 
 // ─── run_connector (parallel execution) ──────────────────────────────────────
@@ -106,9 +105,17 @@ struct CountingConnector {
 
 #[async_trait]
 impl Connector for CountingConnector {
-    fn name(&self) -> &str { "counter" }
-    fn steps(&self) -> Vec<StepDefinition> { self.steps.clone() }
-    async fn execute_step(&self, step_id: &str, ctx: &mut StepContext) -> Result<(), ConnectorError> {
+    fn name(&self) -> &str {
+        "counter"
+    }
+    fn steps(&self) -> Vec<StepDefinition> {
+        self.steps.clone()
+    }
+    async fn execute_step(
+        &self,
+        step_id: &str,
+        ctx: &mut StepContext,
+    ) -> Result<(), ConnectorError> {
         self.counter.fetch_add(1, Ordering::SeqCst);
         ctx.emit_entity(entity(step_id, step_id))?;
         Ok(())
@@ -124,7 +131,11 @@ async fn v02_parallel_run_all_entities_collected() {
         counter: Arc::clone(&counter),
     });
     let out = run_connector(c, "acct", "sync-1", None).await.unwrap();
-    assert_eq!(out.entities.len(), 3, "all three parallel steps must emit their entity");
+    assert_eq!(
+        out.entities.len(),
+        3,
+        "all three parallel steps must emit their entity"
+    );
     assert_eq!(counter.load(Ordering::SeqCst), 3);
 }
 
@@ -144,16 +155,24 @@ struct PriorReadingConnector;
 
 #[async_trait]
 impl Connector for PriorReadingConnector {
-    fn name(&self) -> &str { "prior-reader" }
+    fn name(&self) -> &str {
+        "prior-reader"
+    }
 
     fn steps(&self) -> Vec<StepDefinition> {
         vec![
             step("upstream", "upstream step").build(),
-            step("downstream", "reads upstream").depends_on(&["upstream"]).build(),
+            step("downstream", "reads upstream")
+                .depends_on(&["upstream"])
+                .build(),
         ]
     }
 
-    async fn execute_step(&self, step_id: &str, ctx: &mut StepContext) -> Result<(), ConnectorError> {
+    async fn execute_step(
+        &self,
+        step_id: &str,
+        ctx: &mut StepContext,
+    ) -> Result<(), ConnectorError> {
         match step_id {
             "upstream" => {
                 ctx.emit_entity(entity("host", "upstream-host").display_name("Upstream Host"))?;
@@ -161,7 +180,10 @@ impl Connector for PriorReadingConnector {
             "downstream" => {
                 // Must be able to find the entity emitted by upstream.
                 let found = ctx.get_prior_entity("host", "upstream-host");
-                assert!(found.is_some(), "downstream must see upstream entity in prior_entities");
+                assert!(
+                    found.is_some(),
+                    "downstream must see upstream entity in prior_entities"
+                );
                 ctx.emit_entity(entity("service", "downstream-svc"))?;
             }
             _ => {}
@@ -175,7 +197,11 @@ impl Connector for PriorReadingConnector {
 async fn v02_parallel_downstream_sees_upstream_prior_entities() {
     let c = Arc::new(PriorReadingConnector);
     let out = run_connector(c, "acct", "sync-1", None).await.unwrap();
-    assert_eq!(out.entities.len(), 2, "both upstream and downstream must emit");
+    assert_eq!(
+        out.entities.len(),
+        2,
+        "both upstream and downstream must emit"
+    );
 }
 
 /// A failing step in a wave doesn't prevent its sibling from running (INV-C06).
@@ -183,7 +209,9 @@ struct SiblingFailConnector;
 
 #[async_trait]
 impl Connector for SiblingFailConnector {
-    fn name(&self) -> &str { "sibling-fail" }
+    fn name(&self) -> &str {
+        "sibling-fail"
+    }
 
     fn steps(&self) -> Vec<StepDefinition> {
         vec![
@@ -192,7 +220,11 @@ impl Connector for SiblingFailConnector {
         ]
     }
 
-    async fn execute_step(&self, step_id: &str, ctx: &mut StepContext) -> Result<(), ConnectorError> {
+    async fn execute_step(
+        &self,
+        step_id: &str,
+        ctx: &mut StepContext,
+    ) -> Result<(), ConnectorError> {
         if step_id == "fail" {
             return Err(ConnectorError::UnknownStep("intentional".into()));
         }
@@ -207,7 +239,11 @@ async fn v02_parallel_failed_step_does_not_block_sibling() {
     let c = Arc::new(SiblingFailConnector);
     let out = run_connector(c, "acct", "sync-1", None).await.unwrap();
     // "ok" succeeds and emits one entity; "fail" produces nothing
-    assert_eq!(out.entities.len(), 1, "sibling step must still run despite peer failure");
+    assert_eq!(
+        out.entities.len(),
+        1,
+        "sibling step must still run despite peer failure"
+    );
 }
 
 /// SyncEvent stream receives Started, StepStarted×N, StepCompleted/Failed events.
@@ -225,13 +261,24 @@ async fn v02_parallel_events_emitted_for_all_steps() {
     drop(tx);
 
     let mut events = Vec::new();
-    while let Some(e) = rx.recv().await { events.push(e); }
+    while let Some(e) = rx.recv().await {
+        events.push(e);
+    }
 
-    let started_count = events.iter().filter(|e| matches!(e, SyncEvent::Started { .. })).count();
-    let step_starts   = events.iter().filter(|e| matches!(e, SyncEvent::StepStarted { .. })).count();
-    let step_done     = events.iter().filter(|e| matches!(e, SyncEvent::StepCompleted { .. })).count();
+    let started_count = events
+        .iter()
+        .filter(|e| matches!(e, SyncEvent::Started { .. }))
+        .count();
+    let step_starts = events
+        .iter()
+        .filter(|e| matches!(e, SyncEvent::StepStarted { .. }))
+        .count();
+    let step_done = events
+        .iter()
+        .filter(|e| matches!(e, SyncEvent::StepCompleted { .. }))
+        .count();
 
     assert_eq!(started_count, 1, "one Started event");
-    assert_eq!(step_starts,   2, "two StepStarted events");
-    assert_eq!(step_done,     2, "two StepCompleted events");
+    assert_eq!(step_starts, 2, "two StepStarted events");
+    assert_eq!(step_done, 2, "two StepCompleted events");
 }

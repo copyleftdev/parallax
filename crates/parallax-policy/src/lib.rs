@@ -13,4 +13,6 @@ pub mod rule;
 
 pub use evaluator::{PolicyEvaluator, RuleResult, RuleStatus, Violation};
 pub use posture::{compute_posture, ControlPosture, ControlStatus, FrameworkPosture};
-pub use rule::{load_rules_from_yaml, FrameworkMapping, PolicyError, PolicyRule, Schedule, Severity};
+pub use rule::{
+    load_rules_from_yaml, FrameworkMapping, PolicyError, PolicyRule, Schedule, Severity,
+};

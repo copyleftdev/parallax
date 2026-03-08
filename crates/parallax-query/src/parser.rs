@@ -47,7 +47,10 @@ impl<'t> Parser<'t> {
     }
 
     fn pos_of(&self, offset: usize) -> usize {
-        self.tokens.get(offset).map(|(_, p)| *p).unwrap_or(usize::MAX)
+        self.tokens
+            .get(offset)
+            .map(|(_, p)| *p)
+            .unwrap_or(usize::MAX)
     }
 
     fn current_pos(&self) -> usize {
@@ -144,17 +147,32 @@ impl<'t> Parser<'t> {
             None
         };
 
-        Ok(FindQuery { entity, property_filters, traversals, group_by, return_clause, limit })
+        Ok(FindQuery {
+            entity,
+            property_filters,
+            traversals,
+            group_by,
+            return_clause,
+            limit,
+        })
     }
 
     fn parse_path_query(&mut self) -> Result<PathQuery, ParseError> {
         self.expect(Token::From, "FROM")?;
         let from = self.parse_entity_filter()?;
-        let from_filters = if self.eat(&Token::With) { self.parse_property_expr()? } else { Vec::new() };
+        let from_filters = if self.eat(&Token::With) {
+            self.parse_property_expr()?
+        } else {
+            Vec::new()
+        };
 
         self.expect(Token::To, "TO")?;
         let to = self.parse_entity_filter()?;
-        let to_filters = if self.eat(&Token::With) { self.parse_property_expr()? } else { Vec::new() };
+        let to_filters = if self.eat(&Token::With) {
+            self.parse_property_expr()?
+        } else {
+            Vec::new()
+        };
 
         let max_depth = if self.eat(&Token::Depth) {
             Some(self.parse_integer()? as u32)
@@ -162,13 +180,23 @@ impl<'t> Parser<'t> {
             None
         };
 
-        Ok(PathQuery { from, from_filters, to, to_filters, max_depth })
+        Ok(PathQuery {
+            from,
+            from_filters,
+            to,
+            to_filters,
+            max_depth,
+        })
     }
 
     fn parse_blast_query(&mut self) -> Result<BlastQuery, ParseError> {
         self.expect(Token::From, "FROM")?;
         let origin = self.parse_entity_filter()?;
-        let origin_filters = if self.eat(&Token::With) { self.parse_property_expr()? } else { Vec::new() };
+        let origin_filters = if self.eat(&Token::With) {
+            self.parse_property_expr()?
+        } else {
+            Vec::new()
+        };
 
         let max_depth = if self.eat(&Token::Depth) {
             Some(self.parse_integer()? as u32)
@@ -176,7 +204,11 @@ impl<'t> Parser<'t> {
             None
         };
 
-        Ok(BlastQuery { origin, origin_filters, max_depth })
+        Ok(BlastQuery {
+            origin,
+            origin_filters,
+            max_depth,
+        })
     }
 
     fn parse_entity_filter(&mut self) -> Result<EntityFilter, ParseError> {
@@ -209,10 +241,18 @@ impl<'t> Parser<'t> {
         let negated = self.eat(&Token::Bang);
         let verb = self.parse_verb()?;
         let target = self.parse_entity_filter()?;
-        let property_filters =
-            if self.eat(&Token::With) { self.parse_property_expr()? } else { Vec::new() };
+        let property_filters = if self.eat(&Token::With) {
+            self.parse_property_expr()?
+        } else {
+            Vec::new()
+        };
 
-        Ok(TraversalStep { negated, verb, target, property_filters })
+        Ok(TraversalStep {
+            negated,
+            verb,
+            target,
+            property_filters,
+        })
     }
 
     fn parse_verb(&mut self) -> Result<Verb, ParseError> {
@@ -234,7 +274,10 @@ impl<'t> Parser<'t> {
                 self.expect(Token::To, "TO (after RELATES)")?;
                 Ok(Verb::RelatesTo)
             }
-            Some(t) => Err(ParseError::UnknownVerb { verb: format!("{t:?}"), pos }),
+            Some(t) => Err(ParseError::UnknownVerb {
+                verb: format!("{t:?}"),
+                pos,
+            }),
             None => Err(ParseError::Unexpected {
                 expected: "verb (HAS, ASSIGNED, ...)".into(),
                 got: "end of input".into(),
@@ -437,8 +480,10 @@ mod tests {
         let q = parse("FIND host WITH state = 'running'").unwrap();
         if let Query::Find(fq) = q {
             assert_eq!(fq.property_filters.len(), 1);
-            assert!(matches!(fq.property_filters[0], PropertyCondition::Eq(ref k, ref v)
-                if k == "state" && v.as_str() == Some("running")));
+            assert!(
+                matches!(fq.property_filters[0], PropertyCondition::Eq(ref k, ref v)
+                if k == "state" && v.as_str() == Some("running"))
+            );
         }
     }
 
@@ -457,7 +502,10 @@ mod tests {
             assert_eq!(fq.traversals.len(), 1);
             assert_eq!(fq.traversals[0].verb, Verb::Assigned);
             assert!(!fq.traversals[0].negated);
-            assert_eq!(fq.traversals[0].target.name.as_deref(), Some("aws_iam_role"));
+            assert_eq!(
+                fq.traversals[0].target.name.as_deref(),
+                Some("aws_iam_role")
+            );
         }
     }
 
@@ -491,7 +539,9 @@ mod tests {
     fn parse_return_fields() {
         let q = parse("FIND host RETURN display_name, region").unwrap();
         if let Query::Find(fq) = q {
-            assert!(matches!(fq.return_clause, Some(ReturnClause::Fields(ref fs)) if fs.len() == 2));
+            assert!(
+                matches!(fq.return_clause, Some(ReturnClause::Fields(ref fs)) if fs.len() == 2)
+            );
         }
     }
 
@@ -528,7 +578,10 @@ mod tests {
     fn parse_in_condition() {
         let q = parse("FIND host WITH state IN ('running', 'starting')").unwrap();
         if let Query::Find(fq) = q {
-            assert!(matches!(fq.property_filters[0], PropertyCondition::In(_, _)));
+            assert!(matches!(
+                fq.property_filters[0],
+                PropertyCondition::In(_, _)
+            ));
         }
     }
 
@@ -536,7 +589,10 @@ mod tests {
     fn parse_exists_condition() {
         let q = parse("FIND host WITH tag EXISTS").unwrap();
         if let Query::Find(fq) = q {
-            assert!(matches!(fq.property_filters[0], PropertyCondition::Exists(_)));
+            assert!(matches!(
+                fq.property_filters[0],
+                PropertyCondition::Exists(_)
+            ));
         }
     }
 
@@ -590,11 +646,21 @@ mod tests {
     fn parse_or_combined_with_and() {
         // state = 'running' OR state = 'starting' AND region = 'us-east-1'
         // Parsed as: [Or(state=running, state=starting), Eq(region, us-east-1)]
-        let q = parse("FIND host WITH state = 'running' OR state = 'starting' AND region = 'us-east-1'").unwrap();
+        let q = parse(
+            "FIND host WITH state = 'running' OR state = 'starting' AND region = 'us-east-1'",
+        )
+        .unwrap();
         if let Query::Find(fq) = q {
-            assert_eq!(fq.property_filters.len(), 2, "AND joins two top-level conditions");
+            assert_eq!(
+                fq.property_filters.len(),
+                2,
+                "AND joins two top-level conditions"
+            );
             assert!(matches!(fq.property_filters[0], PropertyCondition::Or(_)));
-            assert!(matches!(fq.property_filters[1], PropertyCondition::Eq(_, _)));
+            assert!(matches!(
+                fq.property_filters[1],
+                PropertyCondition::Eq(_, _)
+            ));
         }
     }
 

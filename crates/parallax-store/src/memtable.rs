@@ -104,12 +104,18 @@ impl MemTable {
 
     /// Return all live entities (full scan, excludes tombstones).
     pub fn all_entities(&self) -> Vec<&Entity> {
-        self.entities.values().filter(|e| !e.is_tombstone()).collect()
+        self.entities
+            .values()
+            .filter(|e| !e.is_tombstone())
+            .collect()
     }
 
     /// Return all live relationships (full scan, excludes tombstones).
     pub fn all_relationships(&self) -> Vec<&Relationship> {
-        self.relationships.values().filter(|r| !r.is_tombstone()).collect()
+        self.relationships
+            .values()
+            .filter(|r| !r.is_tombstone())
+            .collect()
     }
 
     /// Approximate heap usage in bytes.
@@ -124,7 +130,10 @@ impl MemTable {
 
     /// Number of live relationships (excludes tombstones).
     pub fn relationship_count(&self) -> usize {
-        self.relationships.values().filter(|r| !r.is_tombstone()).count()
+        self.relationships
+            .values()
+            .filter(|r| !r.is_tombstone())
+            .count()
     }
 
     /// Return all live entities from a specific connector (source-scoped).
@@ -157,10 +166,18 @@ impl MemTable {
     /// adjacency index so that traversals remain correct after the flush.
     /// Called only from the writer thread (INV-S07).
     pub fn drain_to_flush(&mut self) -> (Vec<Entity>, Vec<Relationship>) {
-        let entities: Vec<Entity> =
-            self.entities.values().filter(|e| !e.is_tombstone()).cloned().collect();
-        let relationships: Vec<Relationship> =
-            self.relationships.values().filter(|r| !r.is_tombstone()).cloned().collect();
+        let entities: Vec<Entity> = self
+            .entities
+            .values()
+            .filter(|e| !e.is_tombstone())
+            .cloned()
+            .collect();
+        let relationships: Vec<Relationship> = self
+            .relationships
+            .values()
+            .filter(|r| !r.is_tombstone())
+            .cloned()
+            .collect();
 
         // Clear entity/relationship payload maps and their secondary indices.
         // The adjacency map is preserved so traversal still works.
@@ -245,7 +262,11 @@ impl MemTable {
             if old.is_tombstone() {
                 None
             } else {
-                Some((old.from_id, old.to_id, old.source.connector_id.as_str().to_owned()))
+                Some((
+                    old.from_id,
+                    old.to_id,
+                    old.source.connector_id.as_str().to_owned(),
+                ))
             }
         });
         if let Some((from, to, src)) = old_info {
@@ -272,7 +293,11 @@ impl MemTable {
             if old.is_tombstone() {
                 None
             } else {
-                Some((old.from_id, old.to_id, old.source.connector_id.as_str().to_owned()))
+                Some((
+                    old.from_id,
+                    old.to_id,
+                    old.source.connector_id.as_str().to_owned(),
+                ))
             }
         });
         if let Some((from, to, src)) = old_info {
@@ -312,13 +337,13 @@ impl MemTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use compact_str::CompactString;
     use parallax_core::{
         entity::{EntityClass, EntityType},
         property::Value,
         source::SourceTag,
         timestamp::Timestamp,
     };
-    use compact_str::CompactString;
     use std::collections::BTreeMap;
 
     fn make_entity(id: EntityId, typ: &str, class: &str) -> Entity {
@@ -335,12 +360,7 @@ mod tests {
         }
     }
 
-    fn make_rel(
-        id: RelationshipId,
-        from: EntityId,
-        to: EntityId,
-        class: &str,
-    ) -> Relationship {
+    fn make_rel(id: RelationshipId, from: EntityId, to: EntityId, class: &str) -> Relationship {
         use parallax_core::relationship::RelationshipClass;
         Relationship {
             id,
